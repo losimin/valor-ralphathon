@@ -1,0 +1,130 @@
+economics:
+  default_tier: frugal
+  tiers:
+    frugal:
+      cost_factor: 1
+      intelligence_range:
+      - 9
+      - 11
+      models:
+      - provider: openai
+        model: gpt-4o-mini
+      - provider: google
+        model: gemini-2.0-flash
+      - provider: anthropic
+        model: claude-3-5-haiku
+      use_cases:
+      - routine_coding
+      - log_analysis
+      - stage1_fix
+    standard:
+      cost_factor: 10
+      intelligence_range:
+      - 14
+      - 16
+      models:
+      - provider: openai
+        model: gpt-4o
+      - provider: anthropic
+        model: claude-sonnet-4-6
+      - provider: google
+        model: gemini-2.5-pro
+      use_cases:
+      - logic_design
+      - stage2_evaluation
+      - refactoring
+    frontier:
+      cost_factor: 30
+      intelligence_range:
+      - 18
+      - 20
+      models:
+      - provider: openai
+        model: o3
+      - provider: anthropic
+        model: claude-opus-4-6
+      use_cases:
+      - consensus
+      - lateral_thinking
+      - big_bang
+  escalation_threshold: 2
+  downgrade_success_streak: 5
+llm:
+  backend: claude
+  permission_mode: default
+  opencode_permission_mode: acceptEdits
+  qa_model: claude-sonnet-4-20250514
+  dependency_analysis_model: claude-opus-4-6
+  ontology_analysis_model: claude-opus-4-6
+  context_compression_model: gpt-4
+clarification:
+  ambiguity_threshold: 0.2
+  max_interview_rounds: 10
+  model_tier: standard
+  default_model: claude-opus-4-6
+execution:
+  max_iterations_per_ac: 10
+  retrospective_interval: 3
+  atomicity_model: claude-opus-4-6
+  decomposition_model: claude-opus-4-6
+  double_diamond_model: claude-opus-4-6
+resilience:
+  stagnation_enabled: true
+  lateral_thinking_enabled: true
+  lateral_model_tier: frontier
+  lateral_temperature: 0.8
+  wonder_model: claude-opus-4-6
+  reflect_model: claude-opus-4-6
+evaluation:
+  stage1_enabled: true
+  stage2_enabled: true
+  stage3_enabled: true
+  satisfaction_threshold: 0.8
+  uncertainty_threshold: 0.3
+  semantic_model: claude-opus-4-6
+  assertion_extraction_model: claude-sonnet-4-6
+consensus:
+  min_models: 3
+  threshold: 0.67
+  diversity_required: true
+  models:
+  - openrouter/openai/gpt-4o
+  - openrouter/anthropic/claude-opus-4-6
+  - openrouter/google/gemini-2.5-pro
+  advocate_model: openrouter/anthropic/claude-opus-4-6
+  devil_model: openrouter/openai/gpt-4o
+  judge_model: openrouter/google/gemini-2.5-pro
+llm_profiles: {}
+llm_role_profiles: {}
+persistence:
+  enabled: true
+  database_path: data/ouroboros.db
+drift:
+  warning_threshold: 0.3
+  critical_threshold: 0.5
+runtime_controls:
+  mcp_tool_timeout_seconds: 0.0
+  generation_idle_timeout_seconds: 7200.0
+  generation_no_progress_timeout_seconds: 14400.0
+  generation_safety_timeout_seconds: 0.0
+  watchdog_poll_seconds: 15.0
+logging:
+  level: info
+  log_path: logs/ouroboros.log
+  include_reasoning: true
+orchestrator:
+  runtime_backend: claude
+  routing:
+    strategy: progressive
+    primary_provider: deepseek
+    fallback_provider: anthropic
+    max_retries_before_escalation: 1
+    ambiguity_threshold: 0.2
+    tiers:
+      primary:
+        model: deepseek/deepseek-v4-pro
+        base_url: https://api.deepseek.com/anthropic
+      fallback:
+        model: claude-3-5-sonnet
+        use_native_runtime: true
+  cli_path: C:\Users\junkai\.local\bin\claude.EXE

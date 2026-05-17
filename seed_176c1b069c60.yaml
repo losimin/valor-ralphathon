@@ -1,0 +1,174 @@
+goal: Build a web app prototype called AgentStart — a step-by-step wizard that audits
+  user workflows by persona, estimates AI efficiency gains, designs agent workflows,
+  and configures agent deployment, using hardcoded data for five personas (Editor,
+  Financial Advisor, Teacher, Project Manager, Customer Service Representative)
+task_type: code
+brownfield_context:
+  project_type: greenfield
+  context_references: []
+  existing_patterns: []
+  existing_dependencies: []
+constraints:
+- Web app built with efficient tech stack
+- All data hardcoded/simulated for prototype
+- '5 personas only: Editor, Financial Advisor, Teacher, Project Manager, Customer
+  Service Representative'
+- 3-5 tasks per persona
+- 2 showcase simulated agent runs per persona (10 total)
+- Role-specific hourly rates with cited sources
+- 80% confidence threshold for auto-enabling agents
+- At least a few agents must be auto-enabled per persona to demonstrate value
+- Step-by-step wizard with back navigation
+- No landing page — opens directly to persona selection
+- Functional and professional tone
+- Reference Anthropic labor market research and arxiv paper 2303.10130 for efficiency
+  estimates
+acceptance_criteria:
+- Step 1 displays 5 persona cards and clicking one loads pre-populated analysis
+- Step 2 shows dashboard with top-line KPIs (% time saved, ROI dollar conversion)
+  in large font, task breakdown below with 95% confidence interval ranges ordered
+  by task frequency
+- Step 3 shows clickable workflow diagram with confidence scores per task, clicking
+  a task reveals agent description card, 2 tasks per persona support simulated agent
+  run showing context and hardcoded response
+- Step 4 shows toggle switches for each agent defaulting on/off based on 80% confidence
+  threshold with pre-filled agent details
+- Final screen shows "Your workspace is ready" with checkmarks and agent names
+- User can navigate back to any previous step
+- ROI uses role-specific market average hourly rates with cited sources
+ontology_schema:
+  name: AgentAuditWorkflow
+  description: Domain model representing personas, their tasks, efficiency estimates,
+    and agent configurations for the AgentStart prototype
+  fields:
+  - name: persona_id
+    type: string
+    description: Unique identifier for each of the five roles
+    required: true
+  - name: persona_name
+    type: string
+    description: Display name of the role (e.g. Editor, Financial Advisor)
+    required: true
+  - name: hourly_rate
+    type: number
+    description: Role-specific market average hourly rate in USD
+    required: true
+  - name: rate_source
+    type: string
+    description: Citation for the hourly rate used
+    required: true
+  - name: tasks
+    type: array
+    description: List of 3-5 tasks associated with the persona
+    required: true
+  - name: task_name
+    type: string
+    description: Name of a specific task the persona performs
+    required: true
+  - name: task_frequency
+    type: number
+    description: Relative frequency ranking of the task for ordering
+    required: true
+  - name: current_hours_weekly
+    type: number
+    description: Estimated hours per week spent on the task currently
+    required: true
+  - name: projected_hours_weekly
+    type: number
+    description: Estimated hours per week with AI agent assistance
+    required: true
+  - name: time_saved_pct
+    type: number
+    description: Percentage of time saved on the task
+    required: true
+  - name: confidence_interval_low
+    type: number
+    description: Lower bound of 95% confidence interval for time savings
+    required: true
+  - name: confidence_interval_high
+    type: number
+    description: Upper bound of 95% confidence interval for time savings
+    required: true
+  - name: automation_confidence
+    type: number
+    description: Confidence score 0-100 that an agent can handle the task
+    required: true
+  - name: agent_name
+    type: string
+    description: Name of the AI agent designed for the task
+    required: true
+  - name: agent_description
+    type: string
+    description: Description of what the agent does for the task
+    required: true
+  - name: agent_enabled
+    type: boolean
+    description: Whether the agent toggle defaults to on based on 80% threshold
+    required: true
+  - name: has_demo
+    type: boolean
+    description: Whether this task has a simulated agent run
+    required: true
+  - name: demo_context
+    type: object
+    description: Hardcoded input context for simulated agent run
+    required: true
+  - name: demo_response
+    type: object
+    description: Hardcoded agent output for simulated agent run
+    required: true
+  - name: roi_weekly
+    type: number
+    description: Dollar value of weekly time savings for the task
+    required: true
+  - name: roi_monthly
+    type: number
+    description: Dollar value of monthly time savings for the task
+    required: true
+evaluation_principles:
+- name: demo_polish
+  description: The prototype looks and feels like a shipping product with professional
+    UI, clear typography, and smooth transitions
+  weight: 0.3
+- name: functional_completeness
+  description: All four steps work end-to-end for all five personas with proper navigation
+  weight: 0.25
+- name: business_value_clarity
+  description: ROI and efficiency metrics are prominently displayed and immediately
+    understandable
+  weight: 0.2
+- name: interaction_fidelity
+  description: Simulated agent runs, toggle switches, and workflow diagrams feel realistic
+    and interactive
+  weight: 0.15
+- name: data_credibility
+  description: Hardcoded numbers are plausible with cited sources for hourly rates
+    and referenced research papers
+  weight: 0.1
+exit_conditions:
+- name: full_wizard_flow
+  description: All four steps render correctly for every persona with navigation
+  criteria: User can select any of 5 personas and click through Steps 1-4 to the workspace
+    ready screen and navigate back
+- name: kpi_dashboard
+  description: Step 2 displays correct top-line KPIs and task breakdown
+  criteria: '% time saved and ROI shown prominently with task-level confidence intervals
+    ordered by frequency'
+- name: agent_workflow
+  description: Step 3 shows clickable workflow diagram with agent cards
+  criteria: Each task node is clickable revealing agent description and 2 tasks per
+    persona trigger simulated runs
+- name: agent_config
+  description: Step 4 toggles default correctly based on confidence
+  criteria: Agents with >=80% confidence are on by default with at least a few enabled
+    per persona
+- name: completion_screen
+  description: Final screen confirms workspace setup
+  criteria: Shows checkmarks with agent names for all enabled agents
+metadata:
+  seed_id: seed_176c1b069c60
+  version: 1.0.0
+  created_at: '2026-05-17T08:38:42.562748Z'
+  ambiguity_score: 0.19
+  interview_id: interview_20260517_071122
+  parent_seed_id: null

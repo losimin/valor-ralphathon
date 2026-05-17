@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgentStart — AI Agent Workflow Wizard</title>
+<style>
+/* ============================================================
+   AgentStart — Professional Wizard UI
+   ============================================================ */
+
+:root {
+  --color-bg: #f8f9fb;
+  --color-surface: #ffffff;
+  --color-text: #1a1d28;
+  --color-text-secondary: #5f6677;
+  --color-border: #e2e5ee;
+  --color-primary: #4f46e5;
+  --color-primary-light: #eef2ff;
+  --color-success: #16a34a;
+  --color-success-light: #f0fdf4;
+  --color-warning: #d97706;
+  --color-warning-light: #fffbeb;
+  --color-danger: #dc2626;
+  --color-danger-light: #fef2f2;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+  --shadow-lg: 0 12px 32px rgba(0,0,0,0.10), 0 4px 8px rgba(0,0,0,0.04);
+  --font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font);
+  background: var(--color-bg);
+  color: var(--color-text);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 32px 16px 64px;
+  line-height: 1.6;
+}
+
+#app {
+  width: 100%;
+  max-width: 960px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* ── Step Indicator ────────────────────────────────────── */
+.step-indicator {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 0;
+}
+.step-indicator__step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px 8px 12px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 24px;
+  background: var(--color-surface);
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+.step-indicator__step:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+.step-indicator__step:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.step-indicator__step--active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+.step-indicator__step--completed {
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+.step-indicator__number {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: rgba(0,0,0,0.06);
+  flex-shrink: 0;
+}
+.step-indicator__step--active .step-indicator__number {
+  background: rgba(255,255,255,0.25);
+  color: white;
+}
+.step-indicator__step--completed .step-indicator__number {
+  background: var(--color-success-light);
+  color: var(--color-success);
+}
+.step-indicator__label { white-space: nowrap; }
+
+/* ── Step Container ────────────────────────────────────── */
+.step {
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+  padding: 40px;
+  box-shadow: var(--shadow-sm);
+  animation: fadeSlideIn 0.3s ease;
+}
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.step__heading {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+}
+.step__subheading {
+  color: var(--color-text-secondary);
+  font-size: 1.05rem;
+  margin-bottom: 32px;
+}
+
+/* ── Step 1: Persona Grid ──────────────────────────────── */
+.persona-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 16px;
+}
+.persona-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 28px 16px 20px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  text-align: center;
+}
+.persona-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+.persona-card:active { transform: translateY(0); }
+.persona-card__icon {
+  font-size: 2.25rem;
+  line-height: 1;
+}
+.persona-card__name {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+.persona-card__role {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+
+/* ── Step 2: KPI Dashboard ─────────────────────────────── */
+.analysis__rate {
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+  margin-bottom: 24px;
+  padding: 6px 12px;
+  background: var(--color-primary-light);
+  border-radius: 6px;
+  display: inline-block;
+}
+.kpi-display {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 16px;
+  margin-bottom: 36px;
+}
+.kpi-display__item {
+  background: var(--color-primary-light);
+  border-radius: var(--radius-sm);
+  padding: 20px 16px;
+  text-align: center;
+}
+.kpi-display__value {
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--color-primary);
+  margin-bottom: 4px;
+}
+.kpi-display__value--highlight {
+  color: var(--color-success);
+}
+.kpi-display__label {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Task Breakdown Table */
+table.task-breakdown-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.task-breakdown-table thead th {
+  text-align: left;
+  padding: 10px 12px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+  border-bottom: 2px solid var(--color-border);
+  white-space: nowrap;
+}
+.task-breakdown-table tbody td {
+  padding: 12px 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+.task-breakdown-table tbody tr:hover { background: #f9fafb; }
+.col--task-name { font-weight: 500; min-width: 200px; }
+.col--frequency { text-align: center; }
+.col--ci-low, .col--ci-high {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+.col--auto-confidence {
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+.col--roi-weekly, .col--roi-monthly {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--color-success);
+}
+
+/* ── Step 3: Workflow Diagram ──────────────────────────── */
+.workflow-diagram__nodes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  list-style: none;
+  margin-bottom: 24px;
+}
+.workflow-diagram__node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px 18px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  min-width: 160px;
+  text-align: center;
+}
+.workflow-diagram__node:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+.workflow-diagram__node--selected {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+.workflow-diagram__node-title {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--color-text);
+  line-height: 1.3;
+}
+.workflow-diagram__node-agent {
+  font-size: 0.7rem;
+  color: var(--color-primary);
+  font-weight: 600;
+}
+.workflow-diagram__node-confidence {
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #f3f4f6;
+}
+.confidence-high { color: var(--color-success); background: var(--color-success-light); }
+.confidence-mid { color: var(--color-warning); background: var(--color-warning-light); }
+.confidence-low { color: var(--color-danger); background: var(--color-danger-light); }
+
+/* Agent Description Card */
+.agent-description-card {
+  margin-top: 20px;
+  padding: 20px 24px;
+  border: 1.5px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-light);
+  animation: fadeSlideIn 0.25s ease;
+}
+.agent-description-card__name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 4px;
+}
+.agent-description-card__task {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+}
+.agent-description-card__description {
+  font-size: 0.9rem;
+  color: var(--color-text);
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+.agent-description-card__confidence {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.agent-description-card__savings {
+  font-size: 0.85rem;
+  color: var(--color-success);
+  font-weight: 500;
+}
+
+/* Simulated Agent Run Panel */
+.simulated-run {
+  margin-top: 20px;
+  padding: 20px 24px;
+  border: 1.5px solid #c7d2fe;
+  border-radius: var(--radius-sm);
+  background: #f5f7ff;
+}
+.simulated-run__heading {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #3730a3;
+}
+.simulated-run__trigger {
+  padding: 8px 18px;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+  margin-bottom: 16px;
+}
+.simulated-run__trigger:hover:not(:disabled) {
+  background: #4338ca;
+}
+.simulated-run__trigger:disabled {
+  background: var(--color-success);
+  cursor: default;
+}
+.simulated-run__section-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+  margin-bottom: 6px;
+  margin-top: 12px;
+}
+.simulated-run__section-label:first-of-type { margin-top: 0; }
+.simulated-run__json {
+  background: #1e1b4b;
+  color: #e0e7ff;
+  padding: 14px 16px;
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* ── Step 4: Agent Config ──────────────────────────────── */
+.configure__list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+.agent-toggle {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  transition: all 0.15s ease;
+}
+.agent-toggle:hover { border-color: #c7d2fe; }
+.agent-toggle__info { flex: 1; }
+.agent-toggle__label {
+  font-weight: 600;
+  font-size: 0.95rem;
+  display: block;
+  margin-bottom: 4px;
+}
+.agent-toggle__description {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+.agent-toggle__confidence {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 10px;
+  display: inline-block;
+  margin-top: 4px;
+}
+.agent-toggle__switch {
+  flex-shrink: 0;
+  width: 52px;
+  height: 28px;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+  background: #d1d5db;
+}
+.agent-toggle__switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: white;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.agent-toggle__switch--on {
+  background: var(--color-success);
+}
+.agent-toggle__switch--on::after {
+  transform: translateX(24px);
+}
+.agent-toggle__status {
+  font-size: 0.75rem;
+  font-weight: 600;
+  min-width: 68px;
+  text-align: right;
+}
+
+/* ── Step 5: Completion ────────────────────────────────── */
+.completion__hero {
+  text-align: center;
+  padding: 32px 0 24px;
+}
+.completion__check {
+  font-size: 4rem;
+  color: var(--color-success);
+  line-height: 1;
+  margin-bottom: 16px;
+}
+.completion__heading { margin-bottom: 8px; }
+.completion__summary {
+  color: var(--color-text-secondary);
+  font-size: 1.05rem;
+  margin-bottom: 28px;
+}
+.completion__agents {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 480px;
+  margin: 0 auto 28px;
+}
+.completion__agent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+.completion__agent-icon {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.completion__agent-icon--enabled {
+  background: var(--color-success-light);
+  color: var(--color-success);
+}
+.completion__agent-icon--disabled {
+  background: #f3f4f6;
+  color: #9ca3af;
+}
+.completion__agent-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  flex: 1;
+}
+.completion__agent-task {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  text-align: right;
+}
+
+/* ── Navigation ────────────────────────────────────────── */
+.step__nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border);
+}
+.step__back, .step__next {
+  padding: 10px 22px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+.step__back {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  color: var(--color-text-secondary);
+}
+.step__back:hover {
+  border-color: #9ca3af;
+  color: var(--color-text);
+}
+.step__next--primary {
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  margin-left: auto;
+}
+.step__next--primary:hover {
+  background: #4338ca;
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── Responsive ────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .step { padding: 24px 16px; }
+  .persona-grid { grid-template-columns: repeat(2, 1fr); }
+  .kpi-display { grid-template-columns: repeat(2, 1fr); }
+  .step-indicator__step { padding: 6px 12px; gap: 4px; }
+  .step-indicator__label { font-size: 0.75rem; }
+  .step__heading { font-size: 1.35rem; }
+  .agent-toggle { flex-direction: column; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ============================================================
+   AgentStart — Complete Application
+   Hardcoded data, wizard logic, and DOM rendering
+   ============================================================ */
+
+// ── Data: Hourly Rates (BLS OEWS May 2023) ──────────────────
+const hourlyRates = {
+  editor: {
+    rate: 36, source:
+    'BLS OEWS May 2023 — Editors (SOC 27-3041), mean annual wage $74,060. ~$36/hr.'
+  },
+  financial_advisor: {
+    rate: 67, source:
+    'BLS OEWS May 2023 — Personal Financial Advisors (SOC 13-2052), mean annual wage $137,740. ~$67/hr.'
+  },
+  teacher: {
+    rate: 32, source:
+    'BLS OEWS May 2023 — Secondary School Teachers (SOC 25-2031), mean annual wage $65,540. ~$32/hr.'
+  },
+  project_manager: {
+    rate: 56, source:
+    'BLS OEWS May 2023 — Project Management Specialists (SOC 13-1082), mean annual wage $116,000. ~$56/hr.'
+  },
+  customer_service_rep: {
+    rate: 19, source:
+    'BLS OEWS May 2023 — Customer Service Representatives (SOC 43-4051), mean annual wage $39,680. ~$19/hr.'
+  }
+};
+
+const THRESHOLD = 80;
+const WEEKS_PER_MONTH = 4.33;
+
+function buildTask(hourlyRate, t) {
+  const hoursSaved = t.current_hours_weekly - t.projected_hours_weekly;
+  const pct = Math.round((hoursSaved / t.current_hours_weekly) * 100);
+  const roiWeekly = Math.round(hoursSaved * hourlyRate);
+  const roiMonthly = Math.round(roiWeekly * WEEKS_PER_MONTH);
+  return {
+    task_name: t.task_name,
+    task_frequency: t.task_frequency,
+    current_hours_weekly: t.current_hours_weekly,
+    projected_hours_weekly: t.projected_hours_weekly,
+    time_saved_pct: pct,
+    confidence_interval_low: t.confidence_interval_low,
+    confidence_interval_high: t.confidence_interval_high,
+    automation_confidence: t.automation_confidence,
+    agent_name: t.agent_name,
+    agent_description: t.agent_description,
+    agent_enabled: t.automation_confidence >= THRESHOLD,
+    has_demo: !!(t.demo_context && t.demo_response),
+    demo_context: t.demo_context || null,
+    demo_response: t.demo_response || null,
+    roi_weekly: roiWeekly,
+    roi_monthly: roiMonthly
+  };
+}
+
+const personaSeeds = [
+  {
+    persona_id: 'editor', persona_name: 'Editor', icon: '\u{1F4DD}', roleCat: 'Content & Publishing',
+    tools: ['Grammar checker', 'Style guide enforcer', 'SEO optimizer', 'Fact checker'],
+    tasks: [
+      { task_name: 'Copyedit drafts for grammar and style', task_frequency: 5, current_hours_weekly: 12, projected_hours_weekly: 3, confidence_interval_low: 65, confidence_interval_high: 82, automation_confidence: 92, agent_name: 'Copyedit Agent', agent_description: 'Applies house style guide, fixes grammar, flags ambiguous phrasing, and proposes tightened sentences with tracked changes.', demo_context: { input_type: 'draft article', word_count: 1850, style_guide: 'AP Style', excerpt: 'The companys new product, which was released last tuesday, have been recieved well by customers.' }, demo_response: { summary: '14 edits proposed, 3 style-guide violations flagged.', edits: ['company\'s (apostrophe)', 'Tuesday (capitalization)', 'has been received (subject-verb + spelling)'], confidence: 0.94 } },
+      { task_name: 'Fact-check claims and sources', task_frequency: 4, current_hours_weekly: 8, projected_hours_weekly: 3, confidence_interval_low: 45, confidence_interval_high: 70, automation_confidence: 78, agent_name: 'Fact-Check Agent', agent_description: 'Cross-references claims against trusted sources, flags unverified statements, and attaches citation links.' },
+      { task_name: 'Write headlines and SEO metadata', task_frequency: 3, current_hours_weekly: 4, projected_hours_weekly: 1, confidence_interval_low: 60, confidence_interval_high: 85, automation_confidence: 88, agent_name: 'Headline & SEO Agent', agent_description: 'Generates 5 headline variants and SEO metadata optimized for CTR and target keywords.', demo_context: { input_type: 'article body', target_keywords: ['remote work', 'productivity'], tone: 'professional' }, demo_response: { headlines: ['The Quiet Productivity Win Hidden in Remote Work', 'Why Remote Teams Are Outperforming the Office', 'Remote Work: The Productivity Data Leaders Missed'], meta_description: 'New data shows remote teams ship 23% more — here is what managers should change today.', confidence: 0.91 } },
+      { task_name: 'Coordinate with writers on revisions', task_frequency: 4, current_hours_weekly: 6, projected_hours_weekly: 4, confidence_interval_low: 20, confidence_interval_high: 45, automation_confidence: 55, agent_name: 'Revision Coordinator', agent_description: 'Drafts revision request emails, tracks deadlines, and summarizes outstanding feedback per writer.' }
+    ]
+  },
+  {
+    persona_id: 'financial_advisor', persona_name: 'Financial Advisor', icon: '\u{1F4CA}', roleCat: 'Wealth Management',
+    tools: ['Portfolio analyzer', 'Retirement modeler', 'Compliance checker', 'Client CRM'],
+    tasks: [
+      { task_name: 'Prepare client portfolio review reports', task_frequency: 5, current_hours_weekly: 10, projected_hours_weekly: 3, confidence_interval_low: 55, confidence_interval_high: 78, automation_confidence: 86, agent_name: 'Portfolio Report Agent', agent_description: 'Pulls latest holdings, computes performance vs benchmarks, drafts narrative commentary, and assembles a branded PDF.', demo_context: { client: 'Acme Family Trust', aum: 4250000, period: 'Q1 2026', benchmark: '60/40 blended' }, demo_response: { headline: 'Portfolio +4.2% vs benchmark +3.1% for Q1 2026.', highlights: ['Equity sleeve outperformed by 180 bps', 'Fixed income drag of 30 bps from duration', 'Recommend rebalance: trim US LCG +1.5%'], confidence: 0.9 } },
+      { task_name: 'Respond to client questions via email', task_frequency: 5, current_hours_weekly: 8, projected_hours_weekly: 3, confidence_interval_low: 40, confidence_interval_high: 65, automation_confidence: 81, agent_name: 'Client Inbox Agent', agent_description: 'Drafts compliant email replies to routine client questions with citations to plan documents; routes complex items for review.' },
+      { task_name: 'Run retirement scenario modeling', task_frequency: 3, current_hours_weekly: 6, projected_hours_weekly: 2, confidence_interval_low: 50, confidence_interval_high: 75, automation_confidence: 84, agent_name: 'Retirement Modeler', agent_description: 'Generates Monte Carlo projections under user-specified assumptions and produces a one-page summary.', demo_context: { client_age: 58, target_retirement: 65, current_savings: 980000, annual_contribution: 30000 }, demo_response: { success_probability: 0.87, median_terminal_wealth: 2150000, recommendation: 'On track. Increase equity allocation 5% to lift floor scenarios.', confidence: 0.88 } },
+      { task_name: 'Compliance documentation and KYC updates', task_frequency: 2, current_hours_weekly: 4, projected_hours_weekly: 2, confidence_interval_low: 25, confidence_interval_high: 50, automation_confidence: 62, agent_name: 'Compliance Doc Agent', agent_description: 'Pre-fills KYC forms from CRM data and flags fields needing advisor confirmation.' }
+    ]
+  },
+  {
+    persona_id: 'teacher', persona_name: 'Teacher', icon: '\u{1F4DA}', roleCat: 'Education',
+    tools: ['Grading assistant', 'Lesson planner', 'Parent comms', 'IEP helper'],
+    tasks: [
+      { task_name: 'Grade student assignments and essays', task_frequency: 5, current_hours_weekly: 10, projected_hours_weekly: 4, confidence_interval_low: 45, confidence_interval_high: 70, automation_confidence: 82, agent_name: 'Grading Assistant', agent_description: 'Scores assignments against rubric, drafts personalized feedback, and surfaces edge cases for teacher review.', demo_context: { assignment: '5-paragraph essay on The Great Gatsby', rubric: 'thesis / evidence / analysis / mechanics', student_count: 28 }, demo_response: { processed: 28, flagged_for_review: 4, mean_score: 82, sample_feedback: 'Strong thesis on the green light symbolism. Strengthen paragraph 3 by adding a direct quote from Chapter 5.', confidence: 0.89 } },
+      { task_name: 'Build lesson plans and materials', task_frequency: 4, current_hours_weekly: 6, projected_hours_weekly: 2, confidence_interval_low: 50, confidence_interval_high: 75, automation_confidence: 85, agent_name: 'Lesson Plan Agent', agent_description: 'Generates standards-aligned lesson plans, slides, and exit tickets from a topic and grade level.' },
+      { task_name: 'Draft parent communications', task_frequency: 3, current_hours_weekly: 3, projected_hours_weekly: 1, confidence_interval_low: 55, confidence_interval_high: 80, automation_confidence: 87, agent_name: 'Parent Comms Agent', agent_description: 'Drafts individualized progress updates and meeting requests in the teacher\'s voice with tracked send approval.', demo_context: { student: 'Jamie R.', topic: 'recent improvement in algebra', tone: 'warm, specific' }, demo_response: { subject: 'Quick update on Jamie\'s algebra progress', body: 'Hi Ms. Rivera, I wanted to share that Jamie scored 94% on this week\'s quiz — a 22-point jump. Their approach to multi-step equations has clearly clicked. We will keep building on this.', confidence: 0.93 } },
+      { task_name: 'Differentiate instruction for IEP students', task_frequency: 3, current_hours_weekly: 4, projected_hours_weekly: 2, confidence_interval_low: 25, confidence_interval_high: 50, automation_confidence: 68, agent_name: 'IEP Differentiation Helper', agent_description: 'Suggests scaffolds and modifications for each lesson aligned to active IEP goals.' }
+    ]
+  },
+  {
+    persona_id: 'project_manager', persona_name: 'Project Manager', icon: '\u{1F4CB}', roleCat: 'Operations',
+    tools: ['Status reporter', 'Standup scribe', 'Schedule keeper', 'Risk logger'],
+    tasks: [
+      { task_name: 'Compile weekly status reports', task_frequency: 5, current_hours_weekly: 6, projected_hours_weekly: 1, confidence_interval_low: 65, confidence_interval_high: 85, automation_confidence: 93, agent_name: 'Status Report Agent', agent_description: 'Aggregates updates from Jira, GitHub, and Slack into a one-page status report with risks and next steps.', demo_context: { project: 'Atlas Migration', week: 'W19 2026', sources: ['Jira', 'GitHub', 'Slack #atlas'] }, demo_response: { rag_status: 'Amber', highlights: ['3 of 5 milestones on track', 'Auth migration slipping 4 days — vendor dependency', 'Decision needed: dual-write window length'], confidence: 0.92 } },
+      { task_name: 'Run stand-ups and capture action items', task_frequency: 5, current_hours_weekly: 5, projected_hours_weekly: 2, confidence_interval_low: 40, confidence_interval_high: 65, automation_confidence: 80, agent_name: 'Standup Scribe', agent_description: 'Transcribes stand-ups, extracts action items with owners and dates, and posts a summary to Slack.' },
+      { task_name: 'Maintain project schedules and Gantt charts', task_frequency: 4, current_hours_weekly: 5, projected_hours_weekly: 2, confidence_interval_low: 35, confidence_interval_high: 60, automation_confidence: 74, agent_name: 'Schedule Keeper', agent_description: 'Reconciles task updates against the baseline plan and proposes timeline adjustments.' },
+      { task_name: 'Draft stakeholder communications', task_frequency: 3, current_hours_weekly: 4, projected_hours_weekly: 1, confidence_interval_low: 55, confidence_interval_high: 78, automation_confidence: 88, agent_name: 'Stakeholder Comms Agent', agent_description: 'Generates audience-appropriate updates (exec, customer, eng) from the same source data.', demo_context: { audience: 'executive sponsors', situation: 'milestone slip on auth migration', length: 'short' }, demo_response: { subject: 'Atlas Migration — auth milestone slip, mitigation in place', body: 'Auth cut-over moves from May 22 to May 26 due to a vendor SSO change. No downstream milestone impact; budget unchanged. Mitigation: parallel test in staging continues this week.', confidence: 0.9 } },
+      { task_name: 'Risk and issue log maintenance', task_frequency: 2, current_hours_weekly: 3, projected_hours_weekly: 1, confidence_interval_low: 30, confidence_interval_high: 55, automation_confidence: 70, agent_name: 'Risk Log Agent', agent_description: 'Detects new risks from meeting notes and PR descriptions, updates the log, and notifies the owner.' }
+    ]
+  },
+  {
+    persona_id: 'customer_service_rep', persona_name: 'Customer Service Representative', icon: '\u{1F4AC}', roleCat: 'Support & Service',
+    tools: ['Ticket triager', 'Response drafter', 'Chat copilot', 'Returns processor'],
+    tasks: [
+      { task_name: 'Respond to inbound support tickets', task_frequency: 5, current_hours_weekly: 20, projected_hours_weekly: 6, confidence_interval_low: 55, confidence_interval_high: 80, automation_confidence: 90, agent_name: 'Tier-1 Response Agent', agent_description: 'Drafts replies to common ticket categories grounded in the knowledge base; escalates anything outside policy.', demo_context: { ticket_id: 'T-48219', category: 'refund request', customer_tier: 'standard', order_age_days: 12 }, demo_response: { draft_reply: 'Hi Sam — sorry the jacket didn\'t work out. I\'ve started your refund of $128.40 to the original card; you should see it in 3–5 business days. A prepaid return label is attached.', policy_check: 'within 30-day window — auto-approved', confidence: 0.94 } },
+      { task_name: 'Categorize and route incoming tickets', task_frequency: 5, current_hours_weekly: 6, projected_hours_weekly: 1, confidence_interval_low: 70, confidence_interval_high: 90, automation_confidence: 95, agent_name: 'Triage Agent', agent_description: 'Classifies tickets by intent, priority, and product area; assigns to the right queue.' },
+      { task_name: 'Handle live chat conversations', task_frequency: 4, current_hours_weekly: 12, projected_hours_weekly: 6, confidence_interval_low: 35, confidence_interval_high: 60, automation_confidence: 76, agent_name: 'Chat Copilot', agent_description: 'Suggests next replies, surfaces relevant KB articles, and auto-fills order lookups during live chat.', demo_context: { channel: 'web chat', customer_intent: 'order status', order_id: 'ORD-77310' }, demo_response: { suggested_reply: 'Your order ORD-77310 shipped yesterday via UPS and is out for delivery today before 8pm. Tracking: 1Z999AA1...', kb_articles: ['Tracking a recent order', 'Delivery exceptions'], confidence: 0.86 } },
+      { task_name: 'Process returns and refunds', task_frequency: 4, current_hours_weekly: 5, projected_hours_weekly: 2, confidence_interval_low: 50, confidence_interval_high: 72, automation_confidence: 83, agent_name: 'Returns Agent', agent_description: 'Validates return eligibility, issues labels, and posts refunds within policy bounds.' },
+      { task_name: 'Write QA notes and call summaries', task_frequency: 3, current_hours_weekly: 3, projected_hours_weekly: 1, confidence_interval_low: 45, confidence_interval_high: 70, automation_confidence: 85, agent_name: 'Call Summary Agent', agent_description: 'Produces structured call summaries and QA notes from recorded interactions.' }
+    ]
+  }
+];
+
+// Build full persona objects with computed tasks
+const personas = personaSeeds.map(p => ({
+  ...p,
+  hourly_rate: hourlyRates[p.persona_id].rate,
+  rate_source: hourlyRates[p.persona_id].source,
+  tasks: p.tasks.map(t => buildTask(hourlyRates[p.persona_id].rate, t))
+}));
+
+// ── Application State ─────────────────────────────────────
+const state = {
+  step: 1,
+  maxReached: 1,
+  persona: null,
+  stepCache: {},
+  // Step 4 toggle state: { agent_name: boolean }
+  agentToggles: {},
+  // Step 3 demo tracking
+  demosRun: new Set(),
+  selectedTaskId: null
+};
+
+// ── Render Engine ─────────────────────────────────────────
+const app = document.getElementById('app');
+
+function $(tag, cls, attrs = {}, children = []) {
+  const el = document.createElement(tag);
+  if (cls) el.className = cls;
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'text') el.textContent = v;
+    else if (k === 'html') el.innerHTML = v;
+    else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+    else el.setAttribute(k, v);
+  }
+  for (const c of children) {
+    if (typeof c === 'string') el.appendChild(document.createTextNode(c));
+    else if (c) el.appendChild(c);
+  }
+  return el;
+}
+
+function clearApp() { app.innerHTML = ''; }
+
+// ── Step Indicator ────────────────────────────────────────
+function renderStepIndicator() {
+  const labels = ['Select Role', 'Analysis', 'Workflow', 'Configure', 'Complete'];
+  const steps = [];
+  for (let i = 1; i <= 5; i++) {
+    let cls = 'step-indicator__step';
+    if (i === state.step) cls += ' step-indicator__step--active';
+    else if (i < state.step) cls += ' step-indicator__step--completed';
+    const disabled = i > state.maxReached;
+    const numSpan = $('span', 'step-indicator__number', { text: String(i) });
+    const labelSpan = $('span', 'step-indicator__label', { text: labels[i-1] });
+    const btn = $('button', cls, {
+      disabled: disabled ? 'true' : '',
+      'aria-label': `Step ${i}: ${labels[i-1]}`,
+      onClick: () => { if (i < state.step) goToStep(i); }
+    }, [numSpan, labelSpan]);
+    steps.push(btn);
+  }
+  return $('nav', 'step-indicator', { 'aria-label': 'Wizard steps' }, steps);
+}
+
+// ── Step 1: Persona Select ────────────────────────────────
+function renderStep1() {
+  const heading = $('h1', 'step__heading', { text: 'Choose your role' });
+  const sub = $('p', 'step__subheading', { text: 'AgentStart will audit your weekly workflow and recommend agents tailored to your role.' });
+
+  const cards = personas.map(p => {
+    const icon = $('span', 'persona-card__icon', { text: p.icon });
+    const name = $('h3', 'persona-card__name', { text: p.persona_name });
+    const role = $('p', 'persona-card__role', { text: p.roleCat });
+    return $('button', 'persona-card', {
+      'data-persona-id': p.persona_id,
+      onClick: () => selectPersona(p)
+    }, [icon, name, role]);
+  });
+
+  const grid = $('div', 'persona-grid', {}, cards);
+  const section = $('section', 'step', { 'data-step': '1' }, [heading, sub, grid]);
+  return section;
+}
+
+// ── Step 2: KPI Dashboard ─────────────────────────────────
+function renderStep2() {
+  const p = state.persona;
+  const heading = $('h1', 'step__heading', { text: `Workflow analysis for ${p.persona_name}` });
+  const rate = $('p', 'analysis__rate', { text: `Hourly rate: $${p.hourly_rate}/hr · ${p.rate_source}` });
+
+  // Compute KPIs
+  let totalCurrent = 0, totalProjected = 0, roiWeekly = 0, roiMonthly = 0, tasksAuto = 0;
+  p.tasks.forEach(t => {
+    totalCurrent += t.current_hours_weekly;
+    totalProjected += t.projected_hours_weekly;
+    roiWeekly += t.roi_weekly;
+    roiMonthly += t.roi_monthly;
+    if (t.agent_enabled) tasksAuto++;
+  });
+  const hoursSaved = totalCurrent - totalProjected;
+  const pctSaved = totalCurrent ? Math.round((hoursSaved / totalCurrent) * 100) : 0;
+  const roiAnnual = roiWeekly * 52;
+
+  const kpiItems = [
+    { val: `${pctSaved}%`, label: 'Time Saved' },
+    { val: `${hoursSaved}h`, label: 'Hours Saved / Week' },
+    { val: `${tasksAuto} of ${p.tasks.length}`, label: 'Tasks Automated' },
+    { val: `$${roiWeekly.toLocaleString()}`, label: 'Weekly ROI' },
+    { val: `$${roiMonthly.toLocaleString()}`, label: 'Monthly ROI' },
+    { val: `$${roiAnnual.toLocaleString()}`, label: 'Annual ROI' }
+  ];
+
+  const kpiGrid = $('div', 'kpi-display', {}, kpiItems.map(k =>
+    $('div', 'kpi-display__item', {}, [
+      $('div', 'kpi-display__value', { text: k.val }),
+      $('div', 'kpi-display__label', { text: k.label })
+    ])
+  ));
+
+  // Task breakdown table ordered by frequency (descending)
+  const sorted = [...p.tasks].sort((a, b) => b.task_frequency - a.task_frequency);
+  const thead = $('thead', 'task-breakdown-table__head', {}, [
+    $('tr', 'task-breakdown-table__header-row', {}, [
+      $('th', 'task-breakdown-table__th col--task-name', { text: 'Task' }),
+      $('th', 'task-breakdown-table__th col--frequency', { text: 'Freq' }),
+      $('th', 'task-breakdown-table__th', { text: 'Current hrs/wk' }),
+      $('th', 'task-breakdown-table__th', { text: 'Proj. hrs/wk' }),
+      $('th', 'task-breakdown-table__th', { text: 'Time Saved' }),
+      $('th', 'task-breakdown-table__th col--ci-low', { text: 'CI Low', 'data-ci-column': 'true' }),
+      $('th', 'task-breakdown-table__th col--ci-high', { text: 'CI High', 'data-ci-column': 'true' }),
+      $('th', 'task-breakdown-table__th col--auto-confidence', { text: 'Auto Conf' }),
+      $('th', 'task-breakdown-table__th col--roi-weekly', { text: 'ROI/wk' }),
+      $('th', 'task-breakdown-table__th col--roi-monthly', { text: 'ROI/mo' }),
+      $('th', 'task-breakdown-table__th col--agent-name', { text: 'Agent' })
+    ])
+  ]);
+
+  const tbody = $('tbody', 'task-breakdown-table__body', {}, sorted.map((t, i) =>
+    $('tr', 'task-breakdown-table__row', { 'data-task-index': String(i), 'data-task-name': t.task_name }, [
+      $('td', 'task-breakdown-table__td col--task-name', { text: t.task_name }),
+      $('td', 'task-breakdown-table__td col--frequency', { text: String(t.task_frequency) }),
+      $('td', 'task-breakdown-table__td', { text: String(t.current_hours_weekly) }),
+      $('td', 'task-breakdown-table__td', { text: String(t.projected_hours_weekly) }),
+      $('td', 'task-breakdown-table__td col--time-saved', { text: `${t.time_saved_pct}%` }),
+      $('td', 'task-breakdown-table__td col--ci-low', { text: `${t.confidence_interval_low}%` }),
+      $('td', 'task-breakdown-table__td col--ci-high', { text: `${t.confidence_interval_high}%` }),
+      $('td', 'task-breakdown-table__td col--auto-confidence', { text: `${t.automation_confidence}%` }),
+      $('td', 'task-breakdown-table__td col--roi-weekly', { text: `$${t.roi_weekly.toLocaleString()}` }),
+      $('td', 'task-breakdown-table__td col--roi-monthly', { text: `$${t.roi_monthly.toLocaleString()}` }),
+      $('td', 'task-breakdown-table__td col--agent-name', { text: t.agent_name })
+    ])
+  ));
+
+  const table = $('table', 'task-breakdown-table', {}, [thead, tbody]);
+
+  const researchNote = $('p', '', { text: 'Efficiency estimates grounded in: Eloundou et al. (2023), "GPTs are GPTs: An Early Look at the Labor Market Impact Potential of Large Language Models," arXiv:2303.10130; and Anthropic Economic Index (2024–2025), "Which Economic Tasks are Performed with AI?"', style: 'font-size:0.75rem;color:#9ca3af;margin-top:16px;font-style:italic;' });
+
+  const back = $('button', 'step__back', { onClick: () => goToStep(1), text: '← Back to roles' });
+  const next = $('button', 'step__next step__next--primary', { onClick: () => advanceToStep(3), text: 'View agent workflow →' });
+  const nav = $('div', 'step__nav', {}, [back, next]);
+
+  const section = $('section', 'step', { 'data-step': '2', 'data-persona-id': p.persona_id },
+    [heading, rate, kpiGrid, table, researchNote, nav]);
+  return section;
+}
+
+// ── Step 3: Agent Workflow ────────────────────────────────
+function taskSlug(task) {
+  return String(task.task_name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+function renderStep3() {
+  const p = state.persona;
+  state.demosRun = new Set(); // Reset demo tracking per render
+  state.selectedTaskId = null;
+
+  const heading = $('h1', 'step__heading', { text: 'Agent workflow' });
+  const sub = $('p', 'step__subheading', { text: 'Click a task to see its agent. Tasks with a demo badge support a simulated agent run.' });
+
+  // Sort by frequency desc
+  const sorted = [...p.tasks].sort((a, b) => b.task_frequency - a.task_frequency);
+
+  const diagramSection = $('section', 'workflow-diagram');
+  const nodeList = $('ol', 'workflow-diagram__nodes');
+
+  sorted.forEach((task, idx) => {
+    const slug = taskSlug(task);
+    let confCls = 'confidence-high';
+    if (task.automation_confidence < 80) confCls = task.automation_confidence >= 60 ? 'confidence-mid' : 'confidence-low';
+
+    const title = $('h3', 'workflow-diagram__node-title', { text: task.task_name });
+    const agentEl = $('p', 'workflow-diagram__node-agent', { text: task.agent_name });
+    const demoBadge = task.has_demo ? ' ▶ Demo' : '';
+    const conf = $('p', `workflow-diagram__node-confidence ${confCls}`, { text: `${task.automation_confidence}% confidence${demoBadge}` });
+
+    const node = $('button', 'workflow-diagram__node', {
+      'data-task-id': slug,
+      'data-node-index': String(idx),
+      onClick: () => handleTaskClick(task, slug)
+    }, [title, agentEl, conf]);
+
+    const item = $('li', 'workflow-diagram__node-wrap', {}, [node]);
+    nodeList.appendChild(item);
+  });
+
+  diagramSection.appendChild(nodeList);
+
+  // Panel container for description card and demo
+  const panelContainer = $('div', '', { id: 'workflow-panel' });
+
+  const back = $('button', 'step__back', { onClick: () => goToStep(2), text: '← Back to analysis' });
+  const next = $('button', 'step__next step__next--primary', { onClick: () => advanceToStep(4), text: 'Configure agents →' });
+  const nav = $('div', 'step__nav', {}, [back, next]);
+
+  const section = $('section', 'step', { 'data-step': '3', 'data-persona-id': p.persona_id },
+    [heading, sub, diagramSection, panelContainer, nav]);
+
+  // Attach handler so we can update the panel in-place
+  section._persona = p;
+  section._panelContainer = panelContainer;
+  section._handleTaskClick = handleTaskClick;
+
+  return section;
+}
+
+function handleTaskClick(task, slug) {
+  state.selectedTaskId = slug;
+  const panel = document.getElementById('workflow-panel');
+  if (!panel) return;
+  panel.innerHTML = '';
+
+  // Highlight the selected node
+  document.querySelectorAll('.workflow-diagram__node').forEach(n => n.classList.remove('workflow-diagram__node--selected'));
+  const node = document.querySelector(`[data-task-id="${slug}"]`);
+  if (node) node.classList.add('workflow-diagram__node--selected');
+
+  // Agent Description Card
+  let confCls = 'confidence-high';
+  if (task.automation_confidence < 80) confCls = task.automation_confidence >= 60 ? 'confidence-mid' : 'confidence-low';
+
+  const name = $('h3', 'agent-description-card__name', { text: task.agent_name });
+  const taskLabel = $('p', 'agent-description-card__task', { text: `For task: ${task.task_name}` });
+  const desc = $('p', 'agent-description-card__description', { text: task.agent_description });
+  const conf = $('p', 'agent-description-card__confidence', { text: `Automation confidence: ${task.automation_confidence}%` });
+  const savings = $('p', 'agent-description-card__savings', { text: `Projected time saved: ${task.time_saved_pct}% (${task.current_hours_weekly}h → ${task.projected_hours_weekly}h weekly)` });
+
+  const card = $('article', 'agent-description-card', { 'data-task-id': slug }, [name, taskLabel, desc, conf, savings]);
+  panel.appendChild(card);
+
+  // Simulated agent run panel (if task has demo)
+  if (task.has_demo) {
+    const demoPanel = $('div', 'simulated-run');
+    const demoHeading = $('h3', 'simulated-run__heading', { text: `Simulated agent run: ${task.agent_name}` });
+    const runBtn = $('button', 'simulated-run__trigger', {
+      onClick: function() {
+        const outputArea = demoPanel.querySelector('.simulated-run__output');
+        if (!outputArea) return;
+        outputArea.innerHTML = '';
+
+        const ctxLabel = $('h4', 'simulated-run__section-label', { text: 'Input context' });
+        const ctxPre = $('pre', 'simulated-run__json', { text: JSON.stringify(task.demo_context, null, 2) });
+        const respLabel = $('h4', 'simulated-run__section-label', { text: 'Agent response' });
+        const respPre = $('pre', 'simulated-run__json', { text: JSON.stringify(task.demo_response, null, 2) });
+
+        outputArea.appendChild(ctxLabel);
+        outputArea.appendChild(ctxPre);
+        outputArea.appendChild(respLabel);
+        outputArea.appendChild(respPre);
+
+        runBtn.textContent = '✓ Demo complete';
+        runBtn.disabled = true;
+        state.demosRun.add(slug);
+      },
+      text: '▶ Run demo'
+    });
+    const outputArea = $('div', 'simulated-run__output');
+    demoPanel.appendChild(demoHeading);
+    demoPanel.appendChild(runBtn);
+    demoPanel.appendChild(outputArea);
+    panel.appendChild(demoPanel);
+  }
+}
+
+// ── Step 4: Agent Configuration ──────────────────────────
+function renderStep4() {
+  const p = state.persona;
+
+  // Initialize toggle state from defaults if not already set
+  if (!state.agentToggles || Object.keys(state.agentToggles).length === 0) {
+    state.agentToggles = {};
+    p.tasks.forEach(t => {
+      state.agentToggles[t.agent_name] = t.automation_confidence >= THRESHOLD;
+    });
+  }
+
+  const heading = $('h1', 'step__heading', { text: `Configure agents for ${p.persona_name}` });
+  const sub = $('p', 'step__subheading', { text: 'Agents with at least 80% automation confidence are enabled by default. Flip any switch to override.' });
+
+  const list = $('div', 'configure__list');
+
+  p.tasks.forEach(t => {
+    const isOn = state.agentToggles[t.agent_name];
+    let confCls = 'confidence-high';
+    if (t.automation_confidence < 80) confCls = t.automation_confidence >= 60 ? 'confidence-mid' : 'confidence-low';
+
+    const label = $('span', 'agent-toggle__label', { text: t.agent_name });
+    const desc = $('span', 'agent-toggle__description', { text: t.agent_description });
+    const conf = $('span', `agent-toggle__confidence ${confCls}`, { text: `${t.automation_confidence}% confidence` });
+    const info = $('div', 'agent-toggle__info', {}, [label, desc, conf]);
+
+    let switchCls = 'agent-toggle__switch';
+    if (isOn) switchCls += ' agent-toggle__switch--on';
+    const switchEl = $('button', switchCls, { 'aria-checked': isOn ? 'true' : 'false' });
+
+    const statusText = isOn ? 'Enabled' : 'Disabled';
+    const status = $('span', 'agent-toggle__status', { text: statusText });
+
+    const row = $('div', 'agent-toggle', { 'data-agent-name': t.agent_name }, [info, switchEl, status]);
+
+    switchEl.addEventListener('click', () => {
+      state.agentToggles[t.agent_name] = !state.agentToggles[t.agent_name];
+      const nowOn = state.agentToggles[t.agent_name];
+      switchEl.className = 'agent-toggle__switch' + (nowOn ? ' agent-toggle__switch--on' : '');
+      switchEl.setAttribute('aria-checked', nowOn ? 'true' : 'false');
+      status.textContent = nowOn ? 'Enabled' : 'Disabled';
+      row.setAttribute('data-enabled', nowOn ? 'true' : 'false');
+    });
+
+    row.setAttribute('data-enabled', isOn ? 'true' : 'false');
+    list.appendChild(row);
+  });
+
+  const back = $('button', 'step__back', { onClick: () => goToStep(3), text: '← Back' });
+  const next = $('button', 'step__next step__next--primary', { onClick: () => advanceToStep(5), text: 'Finish setup →' });
+  const nav = $('div', 'step__nav', {}, [back, next]);
+
+  const section = $('section', 'step', { 'data-step': '4', 'data-persona-id': p.persona_id },
+    [heading, sub, list, nav]);
+  return section;
+}
+
+// ── Step 5: Completion ────────────────────────────────────
+function renderStep5() {
+  const p = state.persona;
+  const enabledNames = Object.entries(state.agentToggles)
+    .filter(([, on]) => on)
+    .map(([name]) => name);
+  const enabledSet = new Set(enabledNames);
+  const enabledCount = enabledSet.size;
+  const totalAgents = p.tasks.length;
+
+  const hero = $('div', 'completion__hero');
+  const check = $('div', 'completion__check', { text: '✓' });
+  const heading = $('h1', 'step__heading completion__heading', { text: 'Your workspace is ready' });
+  const summary = $('p', 'completion__summary', { text: `${enabledCount} of ${totalAgents} agents enabled for ${p.persona_name}` });
+  hero.appendChild(check);
+  hero.appendChild(heading);
+  hero.appendChild(summary);
+
+  const agentList = $('ul', 'completion__agents');
+  p.tasks.forEach(t => {
+    const isEnabled = enabledSet.has(t.agent_name);
+    const iconCls = 'completion__agent-icon' + (isEnabled ? ' completion__agent-icon--enabled' : ' completion__agent-icon--disabled');
+    const icon = $('span', iconCls, { text: isEnabled ? '✓' : '—' });
+    const name = $('span', 'completion__agent-name', { text: t.agent_name });
+    const taskLabel = $('span', 'completion__agent-task', { text: t.task_name });
+    const item = $('li', 'completion__agent', {
+      'data-agent-name': t.agent_name,
+      'data-enabled': isEnabled ? 'true' : 'false'
+    }, [icon, name, taskLabel]);
+    agentList.appendChild(item);
+  });
+
+  const back = $('button', 'step__back', { onClick: () => goToStep(4), text: '← Back to config' });
+  const restart = $('button', 'step__next step__next--primary', { onClick: restartWizard, text: 'Start over' });
+  const nav = $('div', 'step__nav', {}, [back, restart]);
+
+  const section = $('section', 'step', { 'data-step': '5', 'data-persona-id': p.persona_id },
+    [hero, agentList, nav]);
+  return section;
+}
+
+// ── Navigation ────────────────────────────────────────────
+function renderCurrentStep() {
+  clearApp();
+  app.appendChild(renderStepIndicator());
+
+  let section;
+  switch (state.step) {
+    case 1: section = renderStep1(); break;
+    case 2: section = renderStep2(); break;
+    case 3: section = renderStep3(); break;
+    case 4: section = renderStep4(); break;
+    case 5: section = renderStep5(); break;
+  }
+
+  if (section) {
+    state.stepCache[state.step] = section;
+    app.appendChild(section);
+  }
+}
+
+function goToStep(n) {
+  if (n < 1 || n > 5) return;
+  if (n > state.maxReached) return;
+  if (n === state.step) return;
+  state.step = n;
+  renderCurrentStep();
+}
+
+function advanceToStep(n) {
+  if (n < 1 || n > 5) return;
+  if (n > state.maxReached) state.maxReached = n;
+  state.step = n;
+  renderCurrentStep();
+}
+
+function selectPersona(persona) {
+  state.persona = persona;
+  state.maxReached = 1;
+  state.stepCache = {};
+  state.agentToggles = {};
+  state.demosRun = new Set();
+  state.selectedTaskId = null;
+  advanceToStep(2);
+}
+
+function restartWizard() {
+  state.persona = null;
+  state.step = 1;
+  state.maxReached = 1;
+  state.stepCache = {};
+  state.agentToggles = {};
+  state.demosRun = new Set();
+  state.selectedTaskId = null;
+  clearApp();
+  app.appendChild(renderStepIndicator());
+  const s1 = renderStep1();
+  state.stepCache[1] = s1;
+  app.appendChild(s1);
+}
+
+// ── Bootstrap ────────────────────────────────────────────
+renderCurrentStep();
+</script>
+</body>
+</html>

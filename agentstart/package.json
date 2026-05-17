@@ -1,0 +1,9 @@
+{
+  "name": "agentstart",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AgentStart wizard prototype — audits workflows, estimates AI efficiency gains, and configures agent deployment for 5 personas.",
+  "scripts": {
+    "test": "node --test src/data/__tests__ src/components/__tests__ src/steps/__tests__ src/app/__tests__ src/lib/__tests__"
+  }
+}
