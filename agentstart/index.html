@@ -740,8 +740,16 @@ function $(tag, cls, attrs = {}, children = []) {
   for (const [k, v] of Object.entries(attrs)) {
     if (k === 'text') el.textContent = v;
     else if (k === 'html') el.innerHTML = v;
-    else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
-    else el.setAttribute(k, v);
+    else if (k.startsWith('on')) {
+      if (typeof v === 'function') el.addEventListener(k.slice(2).toLowerCase(), v);
+      continue;
+    } else if (v === false || v == null) {
+      continue;
+    } else if (v === true) {
+      el.setAttribute(k, '');
+    } else {
+      el.setAttribute(k, v);
+    }
   }
   for (const c of children) {
     if (typeof c === 'string') el.appendChild(document.createTextNode(c));
