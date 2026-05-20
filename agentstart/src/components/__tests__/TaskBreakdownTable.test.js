@@ -81,7 +81,7 @@ test('TaskBreakdownTable renders the requested five columns in order', () => {
   );
 });
 
-test('TaskBreakdownTable orders by frequency and caps rows at five', () => {
+test('TaskBreakdownTable orders by O*NET frequency and caps rows at five', () => {
   for (const persona of personas) {
     const doc = createFakeDocument();
     const table = createTaskBreakdownTable({
@@ -91,7 +91,7 @@ test('TaskBreakdownTable orders by frequency and caps rows at five', () => {
       document: doc,
     });
 
-    const expected = sortTasksByDimension(persona.tasks, 'task_frequency')
+    const expected = sortTasksByDimension(persona.tasks, 'onet_frequency_score')
       .slice(0, DEFAULT_MAX_ROWS)
       .map((task) => task.task_name);
     const actual = getTbody(table).children.map(
@@ -133,6 +133,10 @@ test('TaskBreakdownTable renders AEI exposure, projected hours, monthly ROI, and
     assert.match(
       getDetails(getCell(row, 'roi_monthly_projected')).children[1].textContent,
       /mean annual wage|Hourly rate input/
+    );
+    assert.match(
+      getDetails(getCell(row, 'projected_hours_saved_weekly')).children[1].textContent,
+      /O\*NET task universe/
     );
     assert.equal(getCell(row, 'agent_name').textContent, task.agent_name);
   }

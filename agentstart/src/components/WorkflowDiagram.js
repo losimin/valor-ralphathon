@@ -16,9 +16,9 @@
 //   Returns the root <section> element. The element exposes `nodes` for ease
 //   of inspection in tests.
 //
-// Tasks are rendered in descending `task_frequency` order to match the rest
-// of the wizard (Step 2's table uses the same ordering), so the diagram reads
-// from highest-leverage task on the left to lowest on the right.
+// Tasks are rendered in descending O*NET frequency order when available,
+// falling back to `task_frequency`, so the diagram reads from highest-leverage
+// task on the left to lowest on the right.
 
 function resolveDocument(explicit) {
   if (explicit) return explicit;
@@ -68,11 +68,13 @@ function createWorkflowDiagram({
   root.appendChild(list);
 
   // Sort a shallow copy so we never mutate the seed data; Step 2 relies on
-  // the same descending-frequency order, so reusing that convention keeps
-  // the two screens visually consistent.
+  // the same ordering, so reusing that convention keeps the two screens
+  // visually consistent.
+  const frequencyValue = (task) =>
+    task.onet_frequency_score ?? task.task_frequency ?? 0;
   const ordered = persona.tasks
     .slice()
-    .sort((a, b) => (b.task_frequency || 0) - (a.task_frequency || 0));
+    .sort((a, b) => frequencyValue(b) - frequencyValue(a));
 
   const nodes = [];
 

@@ -11,6 +11,7 @@ const {
   DAYS_PER_MONTH,
   DAYS_PER_WEEK,
   taskExposureToLlm,
+  taskFrequencyShareInfo,
   taskProjectedHoursSavedWeekly,
   taskRoiMonthlyFromProjectedHours,
 } = require('../lib/kpi');
@@ -37,23 +38,27 @@ const COLUMNS = Object.freeze([
       return `${Number(value.toFixed(1))}h`;
     },
     detail: (t, ctx) => {
-      const totalFrequency = ctx.tasks.reduce(
-        (sum, task) => sum + Math.max(0, task.task_frequency || 0),
-        0
-      );
-      const frequencyShare = totalFrequency
-        ? ((t.task_frequency / totalFrequency) * 100).toFixed(1)
-        : '0.0';
+      const frequencyInfo = taskFrequencyShareInfo(t, ctx.tasks);
+      const frequencyShare = (frequencyInfo.share * 100).toFixed(1);
       const humanOnly = t.human_only_time ?? t.current_hours_weekly;
       const humanWithAi = t.human_with_ai_time ?? t.projected_hours_weekly;
       const timeReduction = humanOnly
         ? (((humanOnly - humanWithAi) / humanOnly) * 100).toFixed(1)
         : '0.0';
+      const sourceContext = frequencyInfo.usesOnetFrequency
+        ? frequencyInfo.proxyTitle
+          ? `O*NET FT weighted frequency score: ${frequencyInfo.frequency.toFixed(4)}; total ${frequencyInfo.denominator.toFixed(4)} from proxy occupation ${frequencyInfo.proxyTitle} (${frequencyInfo.proxySocCode}).`
+          : `O*NET FT weighted frequency score: ${frequencyInfo.frequency.toFixed(4)}; total across all reported role tasks: ${frequencyInfo.denominator.toFixed(4)}.`
+        : frequencyInfo.usesEqualTaskFallback
+          ? `O*NET FT ratings were not available for this occupation in the uploaded workbook; using equal share across ${frequencyInfo.denominator} reported tasks.`
+          : `Role task universe: ${frequencyInfo.denominator} frequency points.`;
       return [
-        `Frequency share: ${t.task_frequency}/${totalFrequency} (${frequencyShare}%).`,
+        sourceContext,
+        `Frequency share of all O*NET-reported role tasks: ${Number(frequencyInfo.frequency.toFixed(4))}/${Number(frequencyInfo.denominator.toFixed(4))} (${frequencyShare}%).`,
         `Weekly baseline: ${DASHBOARD_WORK_WEEK_HOURS} hours.`,
         `Human-only time: ${humanOnly}h; human-with-AI time: ${humanWithAi}h.`,
-        `Formula: frequency share * ${DASHBOARD_WORK_WEEK_HOURS} / human-only time * time reduction (${timeReduction}%).`,
+        `Time reduction: ${timeReduction}%.`,
+        'Formula: frequency share * weekly baseline * time reduction.',
       ].join('\n');
     },
   },
@@ -79,7 +84,9 @@ const COLUMNS = Object.freeze([
       return [
         `Hourly rate input: ${hourlyRateDetail}.`,
         `Hours saved/week: ${Number(projected.toFixed(1))}h.`,
-        `Formula: $${ctx.hourlyRate}/hr * (${Number(projected.toFixed(3))} / ${DAYS_PER_WEEK}) * ${DAYS_PER_MONTH}.`,
+        `Weekly baseline: ${DAYS_PER_WEEK} days.`,
+        `Monthly baseline: ${DAYS_PER_MONTH} days.`,
+        'Formula: hourly rate * (hours saved/week / weekly baseline) * monthly baseline.',
       ].join('\n');
     },
   },
@@ -91,12 +98,12 @@ const COLUMNS = Object.freeze([
   },
 ]);
 
-const DEFAULT_SORT_DIMENSION = 'task_frequency';
+const DEFAULT_SORT_DIMENSION = 'onet_frequency_score';
 const DEFAULT_MAX_ROWS = 5;
 const CI_COLUMN_KEYS = Object.freeze([]);
 
 const SOURCE_NOTE =
-  'Sources: O*NET Database task frequency ratings (https://www.onetcenter.org/database.html); Anthropic Economic Index, "Which Economic Tasks are Performed with AI?", for automation/augmentation exposure and human-only vs. human-with-AI timing (https://huggingface.co/datasets/Anthropic/EconomicIndex); BLS OEWS wage data for hourly rates (https://www.bls.gov/oes/tables.htm).';
+  'Sources: O*NET Task Ratings FT category data from the uploaded workbook, collapsed into weighted task-frequency scores; O*NET OnLine task counts by occupation (https://www.onetonline.org/); Anthropic Economic Index, "Which Economic Tasks are Performed with AI?", for automation/augmentation exposure and human-only vs. human-with-AI timing (https://huggingface.co/datasets/Anthropic/EconomicIndex); BLS OEWS wage data for hourly rates (https://www.bls.gov/oes/tables.htm).';
 
 function resolveDocument(explicit) {
   if (explicit) return explicit;

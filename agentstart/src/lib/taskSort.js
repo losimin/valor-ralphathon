@@ -18,7 +18,7 @@
 //                   comparator with NaN.
 //
 // Supported dimensions (all ontology numeric fields + task_name):
-//   task_frequency, time_saved_pct, current_hours_weekly,
+//   task_frequency, onet_frequency_score, time_saved_pct, current_hours_weekly,
 //   projected_hours_weekly, roi_weekly, roi_monthly, roi_annual,
 //   automation_confidence, confidence_interval_low, confidence_interval_high,
 //   task_name
@@ -38,6 +38,7 @@ const ASCENDING_DIMENSIONS = new Set([
 // Dimensions that are valid sort keys.
 const VALID_DIMENSIONS = new Set([
   'task_frequency',
+  'onet_frequency_score',
   'time_saved_pct',
   'current_hours_weekly',
   'projected_hours_weekly',
@@ -55,6 +56,14 @@ function nameOf(task) {
 }
 
 function valueOf(task, dim) {
+  if (dim === 'onet_frequency_score') {
+    const onet = task && task.onet_frequency_score;
+    if (typeof onet === 'number' && Number.isFinite(onet)) return onet;
+    const fallback = task && task.task_frequency;
+    return typeof fallback === 'number' && Number.isFinite(fallback)
+      ? fallback
+      : null;
+  }
   const val = task && task[dim];
   return typeof val === 'number' && Number.isFinite(val) ? val : null;
 }

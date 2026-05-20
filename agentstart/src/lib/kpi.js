@@ -70,6 +70,69 @@ function totalTaskFrequency(tasks) {
   }, 0);
 }
 
+function taskFrequencyShareInfo(task, tasks) {
+  const onetFrequency =
+    typeof task.onet_frequency_score === 'number' &&
+    Number.isFinite(task.onet_frequency_score) &&
+    task.onet_frequency_score > 0
+      ? task.onet_frequency_score
+      : 0;
+  const onetFrequencyTotal =
+    typeof task.onet_frequency_total === 'number' &&
+    Number.isFinite(task.onet_frequency_total) &&
+    task.onet_frequency_total > 0
+      ? task.onet_frequency_total
+      : 0;
+  const onetTaskCount =
+    typeof task.onet_task_count === 'number' &&
+    Number.isFinite(task.onet_task_count) &&
+    task.onet_task_count > 0
+      ? task.onet_task_count
+      : 0;
+  if (onetFrequency && onetFrequencyTotal) {
+    return {
+      frequency: onetFrequency,
+      denominator: onetFrequencyTotal,
+      share: onetFrequency / onetFrequencyTotal,
+      onetTaskCount,
+      proxySocCode: task.onet_frequency_proxy_soc_code || null,
+      proxyTitle: task.onet_frequency_proxy_title || null,
+      usesOnetFrequency: true,
+      usesEqualTaskFallback: false,
+    };
+  }
+
+  if (onetTaskCount) {
+    return {
+      frequency: 1,
+      denominator: onetTaskCount,
+      share: 1 / onetTaskCount,
+      onetTaskCount,
+      proxySocCode: null,
+      proxyTitle: null,
+      usesOnetFrequency: false,
+      usesEqualTaskFallback: true,
+    };
+  }
+
+  const frequency =
+    typeof task.task_frequency === 'number' && Number.isFinite(task.task_frequency)
+      ? Math.max(0, task.task_frequency)
+      : 0;
+  const fallbackTotalFrequency = totalTaskFrequency(tasks);
+
+  return {
+    frequency,
+    denominator: fallbackTotalFrequency,
+    share: fallbackTotalFrequency ? frequency / fallbackTotalFrequency : 0,
+    onetTaskCount: 0,
+    proxySocCode: null,
+    proxyTitle: null,
+    usesOnetFrequency: false,
+    usesEqualTaskFallback: false,
+  };
+}
+
 function humanOnlyTime(task) {
   return typeof task.human_only_time === 'number'
     ? task.human_only_time
@@ -90,22 +153,17 @@ function taskExposureToLlm(task) {
 }
 
 function taskProjectedHoursSavedWeekly(task, tasks) {
-  const totalFrequency = totalTaskFrequency(tasks);
-  const frequency =
-    typeof task.task_frequency === 'number' && Number.isFinite(task.task_frequency)
-      ? Math.max(0, task.task_frequency)
-      : 0;
+  const frequencyShare = taskFrequencyShareInfo(task, tasks).share;
   const humanOnly = humanOnlyTime(task);
   const humanWithAi = humanWithAiTime(task);
 
-  if (!totalFrequency || !humanOnly || humanWithAi >= humanOnly) {
+  if (!frequencyShare || !humanOnly || humanWithAi >= humanOnly) {
     return 0;
   }
 
-  const frequencyShare = frequency / totalFrequency;
   return (
-    (frequencyShare * DASHBOARD_WORK_WEEK_HOURS) /
-    humanOnly *
+    frequencyShare *
+    DASHBOARD_WORK_WEEK_HOURS *
     ((humanOnly - humanWithAi) / humanOnly)
   );
 }
@@ -186,6 +244,7 @@ module.exports = {
   taskRoiMonthly,
   taskRoiAnnual,
   taskExposureToLlm,
+  taskFrequencyShareInfo,
   taskProjectedHoursSavedWeekly,
   taskRoiMonthlyFromProjectedHours,
   computePersonaKpis,

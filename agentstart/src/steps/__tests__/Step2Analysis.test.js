@@ -54,7 +54,7 @@ test('Step2Analysis renders four KPI tiles and top-five responsive table', () =>
   const root = createStep2Analysis({ persona, document: doc });
 
   assert.equal(root.kpiDisplay.children.length, 4);
-  assert.equal(root.kpiDisplay.children[0].children[0].tagName, 'details');
+  assert.equal(root.kpiDisplay.children[0].children[0].tagName, 'div');
   assert.equal(root.taskRows.length, Math.min(5, persona.tasks.length));
 
   const tableWrap = root.children.find(

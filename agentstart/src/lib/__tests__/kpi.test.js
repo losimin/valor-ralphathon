@@ -16,6 +16,7 @@ const { personas } = require('../../data/personas');
 const {
   computePersonaKpis,
   DASHBOARD_WORK_WEEK_HOURS,
+  taskFrequencyShareInfo,
   taskProjectedHoursSavedWeekly,
   taskRoiAnnual,
   taskRoiMonthlyFromProjectedHours,
@@ -101,6 +102,23 @@ test('computePersonaKpis handles zero-hour edge case', () => {
   assert.equal(kpis.roiWeekly, 0);
   assert.equal(kpis.roiMonthly, 0);
   assert.equal(kpis.roiAnnual, 0);
+});
+
+test('taskProjectedHoursSavedWeekly uses O*NET FT scores for frequency share', () => {
+  const persona = personas.find((p) => p.persona_id === 'editor');
+  const task = persona.tasks.find(
+    (t) => t.task_name === 'Copyedit drafts for grammar and style'
+  );
+  const frequencyInfo = taskFrequencyShareInfo(task, persona.tasks);
+  const expectedShare = task.onet_frequency_score / persona.onet_frequency_total;
+  const expectedHours =
+    expectedShare *
+    DASHBOARD_WORK_WEEK_HOURS *
+    ((task.human_only_time - task.human_with_ai_time) / task.human_only_time);
+
+  assert.equal(frequencyInfo.denominator, persona.onet_frequency_total);
+  assert.equal(frequencyInfo.share, expectedShare);
+  assert.equal(taskProjectedHoursSavedWeekly(task, persona.tasks), expectedHours);
 });
 
 // ---------------------------------------------------------------------------

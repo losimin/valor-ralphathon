@@ -30,12 +30,7 @@
 //     - root.breakdownTable : the rendered TaskBreakdownTable node
 //     - root.taskRows     : the table's data <tr> rows in render order
 
-const {
-  computePersonaKpis,
-  DASHBOARD_WORK_WEEK_HOURS,
-  DAYS_PER_MONTH,
-  DAYS_PER_WEEK,
-} = require('../lib/kpi');
+const { computePersonaKpis } = require('../lib/kpi');
 const { createKpiDisplay } = require('./KpiDisplay');
 const { createTaskBreakdownTable } = require('./TaskBreakdownTable');
 
@@ -64,33 +59,8 @@ function createStep2Dashboard({ persona, document: docArg } = {}) {
   // 1. Top-line KPIs — large-font tiles
   const kpis = computePersonaKpis(persona);
   const rateDetail = persona.rate_detail || {};
-  const annualWageText = rateDetail.mean_annual_wage
-    ? `$${rateDetail.mean_annual_wage.toLocaleString()}`
-    : 'BLS mean annual wage';
   const kpiDisplay = createKpiDisplay({
     kpis,
-    calculationDetails: {
-      tasksAutomated:
-        'Count of tasks whose automation confidence is at least 80%.',
-      hoursSavedWeekly:
-        [
-          'Sum of per-task hours saved.',
-          'Uses each task frequency share.',
-          `Applies a ${DASHBOARD_WORK_WEEK_HOURS}-hour work week.`,
-          'Compares human-only vs. human-with-AI task time.',
-        ].join('\n'),
-      timeSavedPct:
-        [
-          'Total hours saved.',
-          `Divided by the ${DASHBOARD_WORK_WEEK_HOURS}-hour weekly baseline.`,
-        ].join('\n'),
-      roiMonthly:
-        [
-          'Sum of task ROI/month.',
-          `Hourly rate input: ${annualWageText} / 2,080 work-year hours = ~$${persona.hourly_rate}/hr.`,
-          `Formula per task: hourly rate * (hours saved/week / ${DAYS_PER_WEEK}) * ${DAYS_PER_MONTH}.`,
-        ].join('\n'),
-    },
     document: doc,
   });
   root.appendChild(kpiDisplay);
@@ -100,7 +70,7 @@ function createStep2Dashboard({ persona, document: docArg } = {}) {
     tasks: persona.tasks,
     hourlyRate: persona.hourly_rate,
     rateDetail,
-    sortDimension: 'task_frequency',
+    sortDimension: 'onet_frequency_score',
     document: doc,
   });
   const tableWrap = doc.createElement('div');

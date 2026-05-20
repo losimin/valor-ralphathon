@@ -661,8 +661,15 @@ const hourlyRates = {
 
 const THRESHOLD = 80;
 const WEEKS_PER_MONTH = 4.33;
+const onetTaskCounts = {
+  editor: { socCode: '27-3041.00', title: 'Editors', count: 21, frequencyTotal: 90.3618, sourceUrl: 'https://www.onetonline.org/link/details/27-3041.00' },
+  financial_advisor: { socCode: '13-2052.00', title: 'Personal Financial Advisors', count: 21, frequencyTotal: 61.9598, sourceUrl: 'https://www.onetonline.org/link/details/13-2052.00' },
+  teacher: { socCode: '25-2031.00', title: 'Secondary School Teachers, Except Special and Career/Technical Education', count: 32, frequencyTotal: 132.4725, sourceUrl: 'https://www.onetonline.org/link/details/25-2031.00' },
+  project_manager: { socCode: '13-1082.00', title: 'Project Management Specialists', count: 21, frequencyTotal: 79.6405, frequencyProxySocCode: '15-1299.09', frequencyProxyTitle: 'Information Technology Project Managers', sourceUrl: 'https://www.onetonline.org/link/details/13-1082.00' },
+  customer_service_rep: { socCode: '43-4051.00', title: 'Customer Service Representatives', count: 13, frequencyTotal: 63.0777, sourceUrl: 'https://www.onetonline.org/link/details/43-4051.00' }
+};
 
-function buildTask(hourlyRate, t) {
+function buildTask(hourlyRate, t, onetTaskMeta) {
   const hoursSaved = t.current_hours_weekly - t.projected_hours_weekly;
   const pct = Math.round((hoursSaved / t.current_hours_weekly) * 100);
   const roiWeekly = Math.round(hoursSaved * hourlyRate);
@@ -670,6 +677,15 @@ function buildTask(hourlyRate, t) {
   return {
     task_name: t.task_name,
     task_frequency: t.task_frequency,
+    onet_task_id: t.onet_task_id || null,
+    onet_frequency_score: t.onet_frequency_score ?? null,
+    onet_frequency_total: onetTaskMeta.frequencyTotal,
+    onet_frequency_proxy_soc_code: onetTaskMeta.frequencyProxySocCode || null,
+    onet_frequency_proxy_title: onetTaskMeta.frequencyProxyTitle || null,
+    onet_task_count: onetTaskMeta.count,
+    onet_soc_code: onetTaskMeta.socCode,
+    onet_occupation_title: onetTaskMeta.title,
+    onet_task_source_url: onetTaskMeta.sourceUrl,
     current_hours_weekly: t.current_hours_weekly,
     projected_hours_weekly: t.projected_hours_weekly,
     time_saved_pct: pct,
@@ -692,52 +708,52 @@ const personaSeeds = [
     persona_id: 'editor', persona_name: 'Editor', icon: '\u{1F4DD}', roleCat: 'Content & Publishing',
     tools: ['Grammar checker', 'Style guide enforcer', 'SEO optimizer', 'Fact checker'],
     tasks: [
-      { task_name: 'Copyedit drafts for grammar and style', task_frequency: 5, current_hours_weekly: 12, projected_hours_weekly: 3, confidence_interval_low: 65, confidence_interval_high: 82, automation_confidence: 92, agent_name: 'Copyedit Agent', agent_description: 'Applies house style guide, fixes grammar, flags ambiguous phrasing, and proposes tightened sentences with tracked changes.', demo_context: { input_type: 'draft article', word_count: 1850, style_guide: 'AP Style', excerpt: 'The companys new product, which was released last tuesday, have been recieved well by customers.' }, demo_response: { summary: '14 edits proposed, 3 style-guide violations flagged.', edits: ['company\'s (apostrophe)', 'Tuesday (capitalization)', 'has been received (subject-verb + spelling)'], confidence: 0.94 } },
-      { task_name: 'Fact-check claims and sources', task_frequency: 4, current_hours_weekly: 8, projected_hours_weekly: 3, confidence_interval_low: 45, confidence_interval_high: 70, automation_confidence: 78, agent_name: 'Fact-Check Agent', agent_description: 'Cross-references claims against trusted sources, flags unverified statements, and attaches citation links.' },
-      { task_name: 'Write headlines and SEO metadata', task_frequency: 3, current_hours_weekly: 4, projected_hours_weekly: 1, confidence_interval_low: 60, confidence_interval_high: 85, automation_confidence: 88, agent_name: 'Headline & SEO Agent', agent_description: 'Generates 5 headline variants and SEO metadata optimized for CTR and target keywords.', demo_context: { input_type: 'article body', target_keywords: ['remote work', 'productivity'], tone: 'professional' }, demo_response: { headlines: ['The Quiet Productivity Win Hidden in Remote Work', 'Why Remote Teams Are Outperforming the Office', 'Remote Work: The Productivity Data Leaders Missed'], meta_description: 'New data shows remote teams ship 23% more — here is what managers should change today.', confidence: 0.91 } },
-      { task_name: 'Coordinate with writers on revisions', task_frequency: 4, current_hours_weekly: 6, projected_hours_weekly: 4, confidence_interval_low: 20, confidence_interval_high: 45, automation_confidence: 55, agent_name: 'Revision Coordinator', agent_description: 'Drafts revision request emails, tracks deadlines, and summarizes outstanding feedback per writer.' }
+      { task_name: 'Copyedit drafts for grammar and style', task_frequency: 5, onet_task_id: 1777, onet_frequency_score: 5.6221, current_hours_weekly: 12, projected_hours_weekly: 3, confidence_interval_low: 65, confidence_interval_high: 82, automation_confidence: 92, agent_name: 'Copyedit Agent', agent_description: 'Applies house style guide, fixes grammar, flags ambiguous phrasing, and proposes tightened sentences with tracked changes.', demo_context: { input_type: 'draft article', word_count: 1850, style_guide: 'AP Style', excerpt: 'The companys new product, which was released last tuesday, have been recieved well by customers.' }, demo_response: { summary: '14 edits proposed, 3 style-guide violations flagged.', edits: ['company\'s (apostrophe)', 'Tuesday (capitalization)', 'has been received (subject-verb + spelling)'], confidence: 0.94 } },
+      { task_name: 'Fact-check claims and sources', task_frequency: 4, onet_task_id: 1780, onet_frequency_score: 5.1412, current_hours_weekly: 8, projected_hours_weekly: 3, confidence_interval_low: 45, confidence_interval_high: 70, automation_confidence: 78, agent_name: 'Fact-Check Agent', agent_description: 'Cross-references claims against trusted sources, flags unverified statements, and attaches citation links.' },
+      { task_name: 'Write headlines and SEO metadata', task_frequency: 3, onet_task_id: 1782, onet_frequency_score: 4.8855, current_hours_weekly: 4, projected_hours_weekly: 1, confidence_interval_low: 60, confidence_interval_high: 85, automation_confidence: 88, agent_name: 'Headline & SEO Agent', agent_description: 'Generates 5 headline variants and SEO metadata optimized for CTR and target keywords.', demo_context: { input_type: 'article body', target_keywords: ['remote work', 'productivity'], tone: 'professional' }, demo_response: { headlines: ['The Quiet Productivity Win Hidden in Remote Work', 'Why Remote Teams Are Outperforming the Office', 'Remote Work: The Productivity Data Leaders Missed'], meta_description: 'New data shows remote teams ship 23% more — here is what managers should change today.', confidence: 0.91 } },
+      { task_name: 'Coordinate with writers on revisions', task_frequency: 4, onet_task_id: 1786, onet_frequency_score: 5.1881, current_hours_weekly: 6, projected_hours_weekly: 4, confidence_interval_low: 20, confidence_interval_high: 45, automation_confidence: 55, agent_name: 'Revision Coordinator', agent_description: 'Drafts revision request emails, tracks deadlines, and summarizes outstanding feedback per writer.' }
     ]
   },
   {
     persona_id: 'financial_advisor', persona_name: 'Financial Advisor', icon: '\u{1F4CA}', roleCat: 'Wealth Management',
     tools: ['Portfolio analyzer', 'Retirement modeler', 'Compliance checker', 'Client CRM'],
     tasks: [
-      { task_name: 'Prepare client portfolio review reports', task_frequency: 5, current_hours_weekly: 10, projected_hours_weekly: 3, confidence_interval_low: 55, confidence_interval_high: 78, automation_confidence: 86, agent_name: 'Portfolio Report Agent', agent_description: 'Pulls latest holdings, computes performance vs benchmarks, drafts narrative commentary, and assembles a branded PDF.', demo_context: { client: 'Acme Family Trust', aum: 4250000, period: 'Q1 2026', benchmark: '60/40 blended' }, demo_response: { headline: 'Portfolio +4.2% vs benchmark +3.1% for Q1 2026.', highlights: ['Equity sleeve outperformed by 180 bps', 'Fixed income drag of 30 bps from duration', 'Recommend rebalance: trim US LCG +1.5%'], confidence: 0.9 } },
-      { task_name: 'Respond to client questions via email', task_frequency: 5, current_hours_weekly: 8, projected_hours_weekly: 3, confidence_interval_low: 40, confidence_interval_high: 65, automation_confidence: 81, agent_name: 'Client Inbox Agent', agent_description: 'Drafts compliant email replies to routine client questions with citations to plan documents; routes complex items for review.' },
-      { task_name: 'Run retirement scenario modeling', task_frequency: 3, current_hours_weekly: 6, projected_hours_weekly: 2, confidence_interval_low: 50, confidence_interval_high: 75, automation_confidence: 84, agent_name: 'Retirement Modeler', agent_description: 'Generates Monte Carlo projections under user-specified assumptions and produces a one-page summary.', demo_context: { client_age: 58, target_retirement: 65, current_savings: 980000, annual_contribution: 30000 }, demo_response: { success_probability: 0.87, median_terminal_wealth: 2150000, recommendation: 'On track. Increase equity allocation 5% to lift floor scenarios.', confidence: 0.88 } },
-      { task_name: 'Compliance documentation and KYC updates', task_frequency: 2, current_hours_weekly: 4, projected_hours_weekly: 2, confidence_interval_low: 25, confidence_interval_high: 50, automation_confidence: 62, agent_name: 'Compliance Doc Agent', agent_description: 'Pre-fills KYC forms from CRM data and flags fields needing advisor confirmation.' }
+      { task_name: 'Prepare client portfolio review reports', task_frequency: 5, onet_task_id: 12913, onet_frequency_score: 3.48, current_hours_weekly: 10, projected_hours_weekly: 3, confidence_interval_low: 55, confidence_interval_high: 78, automation_confidence: 86, agent_name: 'Portfolio Report Agent', agent_description: 'Pulls latest holdings, computes performance vs benchmarks, drafts narrative commentary, and assembles a branded PDF.', demo_context: { client: 'Acme Family Trust', aum: 4250000, period: 'Q1 2026', benchmark: '60/40 blended' }, demo_response: { headline: 'Portfolio +4.2% vs benchmark +3.1% for Q1 2026.', highlights: ['Equity sleeve outperformed by 180 bps', 'Fixed income drag of 30 bps from duration', 'Recommend rebalance: trim US LCG +1.5%'], confidence: 0.9 } },
+      { task_name: 'Respond to client questions via email', task_frequency: 5, onet_task_id: 12905, onet_frequency_score: 3.2306, current_hours_weekly: 8, projected_hours_weekly: 3, confidence_interval_low: 40, confidence_interval_high: 65, automation_confidence: 81, agent_name: 'Client Inbox Agent', agent_description: 'Drafts compliant email replies to routine client questions with citations to plan documents; routes complex items for review.' },
+      { task_name: 'Run retirement scenario modeling', task_frequency: 3, onet_task_id: 12904, onet_frequency_score: 3.6151, current_hours_weekly: 6, projected_hours_weekly: 2, confidence_interval_low: 50, confidence_interval_high: 75, automation_confidence: 84, agent_name: 'Retirement Modeler', agent_description: 'Generates Monte Carlo projections under user-specified assumptions and produces a one-page summary.', demo_context: { client_age: 58, target_retirement: 65, current_savings: 980000, annual_contribution: 30000 }, demo_response: { success_probability: 0.87, median_terminal_wealth: 2150000, recommendation: 'On track. Increase equity allocation 5% to lift floor scenarios.', confidence: 0.88 } },
+      { task_name: 'Compliance documentation and KYC updates', task_frequency: 2, onet_task_id: 12914, onet_frequency_score: 3.0433, current_hours_weekly: 4, projected_hours_weekly: 2, confidence_interval_low: 25, confidence_interval_high: 50, automation_confidence: 62, agent_name: 'Compliance Doc Agent', agent_description: 'Pre-fills KYC forms from CRM data and flags fields needing advisor confirmation.' }
     ]
   },
   {
     persona_id: 'teacher', persona_name: 'Teacher', icon: '\u{1F4DA}', roleCat: 'Education',
     tools: ['Grading assistant', 'Lesson planner', 'Parent comms', 'IEP helper'],
     tasks: [
-      { task_name: 'Grade student assignments and essays', task_frequency: 5, current_hours_weekly: 10, projected_hours_weekly: 4, confidence_interval_low: 45, confidence_interval_high: 70, automation_confidence: 82, agent_name: 'Grading Assistant', agent_description: 'Scores assignments against rubric, drafts personalized feedback, and surfaces edge cases for teacher review.', demo_context: { assignment: '5-paragraph essay on The Great Gatsby', rubric: 'thesis / evidence / analysis / mechanics', student_count: 28 }, demo_response: { processed: 28, flagged_for_review: 4, mean_score: 82, sample_feedback: 'Strong thesis on the green light symbolism. Strengthen paragraph 3 by adding a direct quote from Chapter 5.', confidence: 0.89 } },
-      { task_name: 'Build lesson plans and materials', task_frequency: 4, current_hours_weekly: 6, projected_hours_weekly: 2, confidence_interval_low: 50, confidence_interval_high: 75, automation_confidence: 85, agent_name: 'Lesson Plan Agent', agent_description: 'Generates standards-aligned lesson plans, slides, and exit tickets from a topic and grade level.' },
-      { task_name: 'Draft parent communications', task_frequency: 3, current_hours_weekly: 3, projected_hours_weekly: 1, confidence_interval_low: 55, confidence_interval_high: 80, automation_confidence: 87, agent_name: 'Parent Comms Agent', agent_description: 'Drafts individualized progress updates and meeting requests in the teacher\'s voice with tracked send approval.', demo_context: { student: 'Jamie R.', topic: 'recent improvement in algebra', tone: 'warm, specific' }, demo_response: { subject: 'Quick update on Jamie\'s algebra progress', body: 'Hi Ms. Rivera, I wanted to share that Jamie scored 94% on this week\'s quiz — a 22-point jump. Their approach to multi-step equations has clearly clicked. We will keep building on this.', confidence: 0.93 } },
-      { task_name: 'Differentiate instruction for IEP students', task_frequency: 3, current_hours_weekly: 4, projected_hours_weekly: 2, confidence_interval_low: 25, confidence_interval_high: 50, automation_confidence: 68, agent_name: 'IEP Differentiation Helper', agent_description: 'Suggests scaffolds and modifications for each lesson aligned to active IEP goals.' }
+      { task_name: 'Grade student assignments and essays', task_frequency: 5, onet_task_id: 6646, onet_frequency_score: 4.9381, current_hours_weekly: 10, projected_hours_weekly: 4, confidence_interval_low: 45, confidence_interval_high: 70, automation_confidence: 82, agent_name: 'Grading Assistant', agent_description: 'Scores assignments against rubric, drafts personalized feedback, and surfaces edge cases for teacher review.', demo_context: { assignment: '5-paragraph essay on The Great Gatsby', rubric: 'thesis / evidence / analysis / mechanics', student_count: 28 }, demo_response: { processed: 28, flagged_for_review: 4, mean_score: 82, sample_feedback: 'Strong thesis on the green light symbolism. Strengthen paragraph 3 by adding a direct quote from Chapter 5.', confidence: 0.89 } },
+      { task_name: 'Build lesson plans and materials', task_frequency: 4, onet_task_id: 6657, onet_frequency_score: 4.224, current_hours_weekly: 6, projected_hours_weekly: 2, confidence_interval_low: 50, confidence_interval_high: 75, automation_confidence: 85, agent_name: 'Lesson Plan Agent', agent_description: 'Generates standards-aligned lesson plans, slides, and exit tickets from a topic and grade level.' },
+      { task_name: 'Draft parent communications', task_frequency: 3, onet_task_id: 6656, onet_frequency_score: 3.4123, current_hours_weekly: 3, projected_hours_weekly: 1, confidence_interval_low: 55, confidence_interval_high: 80, automation_confidence: 87, agent_name: 'Parent Comms Agent', agent_description: 'Drafts individualized progress updates and meeting requests in the teacher\'s voice with tracked send approval.', demo_context: { student: 'Jamie R.', topic: 'recent improvement in algebra', tone: 'warm, specific' }, demo_response: { subject: 'Quick update on Jamie\'s algebra progress', body: 'Hi Ms. Rivera, I wanted to share that Jamie scored 94% on this week\'s quiz — a 22-point jump. Their approach to multi-step equations has clearly clicked. We will keep building on this.', confidence: 0.93 } },
+      { task_name: 'Differentiate instruction for IEP students', task_frequency: 3, onet_task_id: 6644, onet_frequency_score: 5.0154, current_hours_weekly: 4, projected_hours_weekly: 2, confidence_interval_low: 25, confidence_interval_high: 50, automation_confidence: 68, agent_name: 'IEP Differentiation Helper', agent_description: 'Suggests scaffolds and modifications for each lesson aligned to active IEP goals.' }
     ]
   },
   {
     persona_id: 'project_manager', persona_name: 'Project Manager', icon: '\u{1F4CB}', roleCat: 'Operations',
     tools: ['Status reporter', 'Standup scribe', 'Schedule keeper', 'Risk logger'],
     tasks: [
-      { task_name: 'Compile weekly status reports', task_frequency: 5, current_hours_weekly: 6, projected_hours_weekly: 1, confidence_interval_low: 65, confidence_interval_high: 85, automation_confidence: 93, agent_name: 'Status Report Agent', agent_description: 'Aggregates updates from Jira, GitHub, and Slack into a one-page status report with risks and next steps.', demo_context: { project: 'Atlas Migration', week: 'W19 2026', sources: ['Jira', 'GitHub', 'Slack #atlas'] }, demo_response: { rag_status: 'Amber', highlights: ['3 of 5 milestones on track', 'Auth migration slipping 4 days — vendor dependency', 'Decision needed: dual-write window length'], confidence: 0.92 } },
-      { task_name: 'Run stand-ups and capture action items', task_frequency: 5, current_hours_weekly: 5, projected_hours_weekly: 2, confidence_interval_low: 40, confidence_interval_high: 65, automation_confidence: 80, agent_name: 'Standup Scribe', agent_description: 'Transcribes stand-ups, extracts action items with owners and dates, and posts a summary to Slack.' },
-      { task_name: 'Maintain project schedules and Gantt charts', task_frequency: 4, current_hours_weekly: 5, projected_hours_weekly: 2, confidence_interval_low: 35, confidence_interval_high: 60, automation_confidence: 74, agent_name: 'Schedule Keeper', agent_description: 'Reconciles task updates against the baseline plan and proposes timeline adjustments.' },
-      { task_name: 'Draft stakeholder communications', task_frequency: 3, current_hours_weekly: 4, projected_hours_weekly: 1, confidence_interval_low: 55, confidence_interval_high: 78, automation_confidence: 88, agent_name: 'Stakeholder Comms Agent', agent_description: 'Generates audience-appropriate updates (exec, customer, eng) from the same source data.', demo_context: { audience: 'executive sponsors', situation: 'milestone slip on auth migration', length: 'short' }, demo_response: { subject: 'Atlas Migration — auth milestone slip, mitigation in place', body: 'Auth cut-over moves from May 22 to May 26 due to a vendor SSO change. No downstream milestone impact; budget unchanged. Mitigation: parallel test in staging continues this week.', confidence: 0.9 } },
-      { task_name: 'Risk and issue log maintenance', task_frequency: 2, current_hours_weekly: 3, projected_hours_weekly: 1, confidence_interval_low: 30, confidence_interval_high: 55, automation_confidence: 70, agent_name: 'Risk Log Agent', agent_description: 'Detects new risks from meeting notes and PR descriptions, updates the log, and notifies the owner.' }
+      { task_name: 'Compile weekly status reports', task_frequency: 5, onet_task_id: 16168, onet_frequency_score: 3.9047, current_hours_weekly: 6, projected_hours_weekly: 1, confidence_interval_low: 65, confidence_interval_high: 85, automation_confidence: 93, agent_name: 'Status Report Agent', agent_description: 'Aggregates updates from Jira, GitHub, and Slack into a one-page status report with risks and next steps.', demo_context: { project: 'Atlas Migration', week: 'W19 2026', sources: ['Jira', 'GitHub', 'Slack #atlas'] }, demo_response: { rag_status: 'Amber', highlights: ['3 of 5 milestones on track', 'Auth migration slipping 4 days — vendor dependency', 'Decision needed: dual-write window length'], confidence: 0.92 } },
+      { task_name: 'Run stand-ups and capture action items', task_frequency: 5, onet_task_id: 16156, onet_frequency_score: 4.9473, current_hours_weekly: 5, projected_hours_weekly: 2, confidence_interval_low: 40, confidence_interval_high: 65, automation_confidence: 80, agent_name: 'Standup Scribe', agent_description: 'Transcribes stand-ups, extracts action items with owners and dates, and posts a summary to Slack.' },
+      { task_name: 'Maintain project schedules and Gantt charts', task_frequency: 4, onet_task_id: 16170, onet_frequency_score: 3.9044, current_hours_weekly: 5, projected_hours_weekly: 2, confidence_interval_low: 35, confidence_interval_high: 60, automation_confidence: 74, agent_name: 'Schedule Keeper', agent_description: 'Reconciles task updates against the baseline plan and proposes timeline adjustments.' },
+      { task_name: 'Draft stakeholder communications', task_frequency: 3, onet_task_id: 16161, onet_frequency_score: 3.4286, current_hours_weekly: 4, projected_hours_weekly: 1, confidence_interval_low: 55, confidence_interval_high: 78, automation_confidence: 88, agent_name: 'Stakeholder Comms Agent', agent_description: 'Generates audience-appropriate updates (exec, customer, eng) from the same source data.', demo_context: { audience: 'executive sponsors', situation: 'milestone slip on auth migration', length: 'short' }, demo_response: { subject: 'Atlas Migration — auth milestone slip, mitigation in place', body: 'Auth cut-over moves from May 22 to May 26 due to a vendor SSO change. No downstream milestone impact; budget unchanged. Mitigation: parallel test in staging continues this week.', confidence: 0.9 } },
+      { task_name: 'Risk and issue log maintenance', task_frequency: 2, onet_task_id: 16151, onet_frequency_score: 3.4762, current_hours_weekly: 3, projected_hours_weekly: 1, confidence_interval_low: 30, confidence_interval_high: 55, automation_confidence: 70, agent_name: 'Risk Log Agent', agent_description: 'Detects new risks from meeting notes and PR descriptions, updates the log, and notifies the owner.' }
     ]
   },
   {
     persona_id: 'customer_service_rep', persona_name: 'Customer Service Representative', icon: '\u{1F4AC}', roleCat: 'Support & Service',
     tools: ['Ticket triager', 'Response drafter', 'Chat copilot', 'Returns processor'],
     tasks: [
-      { task_name: 'Respond to inbound support tickets', task_frequency: 5, current_hours_weekly: 20, projected_hours_weekly: 6, confidence_interval_low: 55, confidence_interval_high: 80, automation_confidence: 90, agent_name: 'Tier-1 Response Agent', agent_description: 'Drafts replies to common ticket categories grounded in the knowledge base; escalates anything outside policy.', demo_context: { ticket_id: 'T-48219', category: 'refund request', customer_tier: 'standard', order_age_days: 12 }, demo_response: { draft_reply: 'Hi Sam — sorry the jacket didn\'t work out. I\'ve started your refund of $128.40 to the original card; you should see it in 3–5 business days. A prepaid return label is attached.', policy_check: 'within 30-day window — auto-approved', confidence: 0.94 } },
-      { task_name: 'Categorize and route incoming tickets', task_frequency: 5, current_hours_weekly: 6, projected_hours_weekly: 1, confidence_interval_low: 70, confidence_interval_high: 90, automation_confidence: 95, agent_name: 'Triage Agent', agent_description: 'Classifies tickets by intent, priority, and product area; assigns to the right queue.' },
-      { task_name: 'Handle live chat conversations', task_frequency: 4, current_hours_weekly: 12, projected_hours_weekly: 6, confidence_interval_low: 35, confidence_interval_high: 60, automation_confidence: 76, agent_name: 'Chat Copilot', agent_description: 'Suggests next replies, surfaces relevant KB articles, and auto-fills order lookups during live chat.', demo_context: { channel: 'web chat', customer_intent: 'order status', order_id: 'ORD-77310' }, demo_response: { suggested_reply: 'Your order ORD-77310 shipped yesterday via UPS and is out for delivery today before 8pm. Tracking: 1Z999AA1...', kb_articles: ['Tracking a recent order', 'Delivery exceptions'], confidence: 0.86 } },
-      { task_name: 'Process returns and refunds', task_frequency: 4, current_hours_weekly: 5, projected_hours_weekly: 2, confidence_interval_low: 50, confidence_interval_high: 72, automation_confidence: 83, agent_name: 'Returns Agent', agent_description: 'Validates return eligibility, issues labels, and posts refunds within policy bounds.' },
-      { task_name: 'Write QA notes and call summaries', task_frequency: 3, current_hours_weekly: 3, projected_hours_weekly: 1, confidence_interval_low: 45, confidence_interval_high: 70, automation_confidence: 85, agent_name: 'Call Summary Agent', agent_description: 'Produces structured call summaries and QA notes from recorded interactions.' }
+      { task_name: 'Respond to inbound support tickets', task_frequency: 5, onet_task_id: 18565, onet_frequency_score: 5.8767, current_hours_weekly: 20, projected_hours_weekly: 6, confidence_interval_low: 55, confidence_interval_high: 80, automation_confidence: 90, agent_name: 'Tier-1 Response Agent', agent_description: 'Drafts replies to common ticket categories grounded in the knowledge base; escalates anything outside policy.', demo_context: { ticket_id: 'T-48219', category: 'refund request', customer_tier: 'standard', order_age_days: 12 }, demo_response: { draft_reply: 'Hi Sam — sorry the jacket didn\'t work out. I\'ve started your refund of $128.40 to the original card; you should see it in 3–5 business days. A prepaid return label is attached.', policy_check: 'within 30-day window — auto-approved', confidence: 0.94 } },
+      { task_name: 'Categorize and route incoming tickets', task_frequency: 5, onet_task_id: 2582, onet_frequency_score: 4.0592, current_hours_weekly: 6, projected_hours_weekly: 1, confidence_interval_low: 70, confidence_interval_high: 90, automation_confidence: 95, agent_name: 'Triage Agent', agent_description: 'Classifies tickets by intent, priority, and product area; assigns to the right queue.' },
+      { task_name: 'Handle live chat conversations', task_frequency: 4, onet_task_id: 2581, onet_frequency_score: 4.8566, current_hours_weekly: 12, projected_hours_weekly: 6, confidence_interval_low: 35, confidence_interval_high: 60, automation_confidence: 76, agent_name: 'Chat Copilot', agent_description: 'Suggests next replies, surfaces relevant KB articles, and auto-fills order lookups during live chat.', demo_context: { channel: 'web chat', customer_intent: 'order status', order_id: 'ORD-77310' }, demo_response: { suggested_reply: 'Your order ORD-77310 shipped yesterday via UPS and is out for delivery today before 8pm. Tracking: 1Z999AA1...', kb_articles: ['Tracking a recent order', 'Delivery exceptions'], confidence: 0.86 } },
+      { task_name: 'Process returns and refunds', task_frequency: 4, onet_task_id: 2579, onet_frequency_score: 4.988, current_hours_weekly: 5, projected_hours_weekly: 2, confidence_interval_low: 50, confidence_interval_high: 72, automation_confidence: 83, agent_name: 'Returns Agent', agent_description: 'Validates return eligibility, issues labels, and posts refunds within policy bounds.' },
+      { task_name: 'Write QA notes and call summaries', task_frequency: 3, onet_task_id: 2578, onet_frequency_score: 5.7882, current_hours_weekly: 3, projected_hours_weekly: 1, confidence_interval_low: 45, confidence_interval_high: 70, automation_confidence: 85, agent_name: 'Call Summary Agent', agent_description: 'Produces structured call summaries and QA notes from recorded interactions.' }
     ]
   }
 ];
@@ -745,10 +761,17 @@ const personaSeeds = [
 // Build full persona objects with computed tasks
 const personas = personaSeeds.map(p => ({
   ...p,
+  onet_task_count: onetTaskCounts[p.persona_id].count,
+  onet_frequency_total: onetTaskCounts[p.persona_id].frequencyTotal,
+  onet_frequency_proxy_soc_code: onetTaskCounts[p.persona_id].frequencyProxySocCode || null,
+  onet_frequency_proxy_title: onetTaskCounts[p.persona_id].frequencyProxyTitle || null,
+  onet_soc_code: onetTaskCounts[p.persona_id].socCode,
+  onet_occupation_title: onetTaskCounts[p.persona_id].title,
+  onet_task_source_url: onetTaskCounts[p.persona_id].sourceUrl,
   hourly_rate: hourlyRates[p.persona_id].rate,
   rate_source: hourlyRates[p.persona_id].source,
   rate_detail: hourlyRates[p.persona_id],
-  tasks: p.tasks.map(t => buildTask(hourlyRates[p.persona_id].rate, t))
+  tasks: p.tasks.map(t => buildTask(hourlyRates[p.persona_id].rate, t, onetTaskCounts[p.persona_id]))
 }));
 
 // ── Application State ─────────────────────────────────────
@@ -844,33 +867,83 @@ function renderStep2() {
       $('div', 'calculation-details__body', { text: detail })
     ]);
 
-  const totalFrequency = p.tasks.reduce((sum, t) => sum + t.task_frequency, 0);
   const exposureToLlm = (t) => t.agent_enabled ? 'Automation' : 'Augmentation';
+  const frequencyInfo = (t) => {
+    const onetFrequency = t.onet_frequency_score || 0;
+    const onetFrequencyTotal = t.onet_frequency_total || p.onet_frequency_total || 0;
+    const onetTaskCount = t.onet_task_count || p.onet_task_count || 0;
+    if (onetFrequency && onetFrequencyTotal) {
+      return {
+        frequency: onetFrequency,
+        denominator: onetFrequencyTotal,
+        share: onetFrequency / onetFrequencyTotal,
+        proxySocCode: t.onet_frequency_proxy_soc_code || null,
+        proxyTitle: t.onet_frequency_proxy_title || null,
+        usesOnetFrequency: true,
+        usesEqualTaskFallback: false
+      };
+    }
+    if (onetTaskCount) {
+      return {
+        frequency: 1,
+        denominator: onetTaskCount,
+        share: 1 / onetTaskCount,
+        proxySocCode: null,
+        proxyTitle: null,
+        usesOnetFrequency: false,
+        usesEqualTaskFallback: true
+      };
+    }
+    const frequency = Math.max(0, t.task_frequency || 0);
+    const fallbackTotal = p.tasks.reduce((sum, task) => sum + Math.max(0, task.task_frequency || 0), 0);
+    return {
+      frequency,
+      denominator: fallbackTotal,
+      share: fallbackTotal ? frequency / fallbackTotal : 0,
+      proxySocCode: null,
+      proxyTitle: null,
+      usesOnetFrequency: false,
+      usesEqualTaskFallback: false
+    };
+  };
   const projectedHoursSaved = (t) => {
+    const info = frequencyInfo(t);
     const humanOnly = t.human_only_time ?? t.current_hours_weekly;
     const humanWithAi = t.human_with_ai_time ?? t.projected_hours_weekly;
-    if (!totalFrequency || !humanOnly || humanWithAi >= humanOnly) return 0;
-    return ((t.task_frequency / totalFrequency) * 40 / humanOnly) *
+    if (!info.share || !humanOnly || humanWithAi >= humanOnly) return 0;
+    return (info.share * 40) *
       ((humanOnly - humanWithAi) / humanOnly);
   };
   const monthlyRoi = (t) => Math.round(p.hourly_rate * (projectedHoursSaved(t) / 7) * 30);
   const projectedDetail = (t) => {
     const humanOnly = t.human_only_time ?? t.current_hours_weekly;
     const humanWithAi = t.human_with_ai_time ?? t.projected_hours_weekly;
-    const share = totalFrequency ? ((t.task_frequency / totalFrequency) * 100).toFixed(1) : '0.0';
+    const info = frequencyInfo(t);
+    const share = (info.share * 100).toFixed(1);
     const reduction = humanOnly ? (((humanOnly - humanWithAi) / humanOnly) * 100).toFixed(1) : '0.0';
+    const sourceContext = info.usesOnetFrequency
+      ? info.proxyTitle
+        ? `O*NET FT weighted frequency score: ${info.frequency.toFixed(4)}; total ${info.denominator.toFixed(4)} from proxy occupation ${info.proxyTitle} (${info.proxySocCode}).`
+        : `O*NET FT weighted frequency score: ${info.frequency.toFixed(4)}; total across all reported role tasks: ${info.denominator.toFixed(4)}.`
+      : info.usesEqualTaskFallback
+        ? `O*NET FT ratings were not available for this occupation in the uploaded workbook; using equal share across ${info.denominator} reported tasks.`
+        : `Role task universe: ${info.denominator} frequency points.`;
     return [
-      `Frequency share: ${t.task_frequency}/${totalFrequency} (${share}%).`,
+      sourceContext,
+      `Frequency share of all O*NET-reported role tasks: ${Number(info.frequency.toFixed(4))}/${Number(info.denominator.toFixed(4))} (${share}%).`,
       'Weekly baseline: 40 hours.',
       `Human-only time: ${humanOnly}h; human-with-AI time: ${humanWithAi}h.`,
-      `Formula: frequency share * 40 / human-only time * time reduction (${reduction}%).`
+      `Time reduction: ${reduction}%.`,
+      'Formula: frequency share * weekly baseline * time reduction.'
     ].join('\n');
   };
   const roiDetail = (t) =>
     [
       `Hourly rate input: ${annualWageText} / 2,080 work-year hours = ~$${p.hourly_rate}/hr.`,
       `Hours saved/week: ${Number(projectedHoursSaved(t).toFixed(1))}h.`,
-      `Formula: $${p.hourly_rate}/hr * (${Number(projectedHoursSaved(t).toFixed(3))} / 7) * 30.`
+      'Weekly baseline: 7 days.',
+      'Monthly baseline: 30 days.',
+      'Formula: hourly rate * (hours saved/week / weekly baseline) * monthly baseline.'
     ].join('\n');
   const tasksAuto = p.tasks.filter(t => t.agent_enabled).length;
   const hoursSaved = p.tasks.reduce((sum, t) => sum + projectedHoursSaved(t), 0);
@@ -879,21 +952,24 @@ function renderStep2() {
   const annualWageText = `$${p.rate_detail.meanAnnual.toLocaleString()}`;
 
   const kpiItems = [
-    { val: `${tasksAuto} of ${p.tasks.length}`, label: 'No. of Tasks Automated', detail: 'Count of tasks whose automation confidence is at least 80%.' },
-    { val: `${Number(hoursSaved.toFixed(1))}h`, label: 'Total Hours Saved / Week', detail: ['Sum of per-task hours saved.', 'Uses each task frequency share.', 'Applies a 40-hour work week.', 'Compares human-only vs. human-with-AI task time.'].join('\n') },
-    { val: `${pctSaved}%`, label: 'Time Saved', detail: ['Total hours saved.', 'Divided by the 40-hour weekly baseline.'].join('\n') },
-    { val: `$${roiMonthly.toLocaleString()}`, label: 'Monthly ROI', detail: ['Sum of task ROI/month.', `Hourly rate input: ${annualWageText} / 2,080 work-year hours = ~$${p.hourly_rate}/hr.`, 'Formula per task: hourly rate * (hours saved/week / 7) * 30.'].join('\n') }
+    { val: `${tasksAuto} of ${p.tasks.length}`, label: 'No. of Tasks Automated' },
+    { val: `${Number(hoursSaved.toFixed(1))}h`, label: 'Total Hours Saved / Week' },
+    { val: `${pctSaved}%`, label: 'Time Saved' },
+    { val: `$${roiMonthly.toLocaleString()}`, label: 'Monthly ROI' }
   ];
 
   const kpiGrid = $('div', 'kpi-display', {}, kpiItems.map(k =>
     $('div', 'kpi-display__item', {}, [
-      calcDetails(k.val, k.detail, 'kpi-display__value'),
+      $('div', 'kpi-display__value', { text: k.val }),
       $('div', 'kpi-display__label', { text: k.label })
     ])
   ));
 
   // Task breakdown table ordered by frequency (descending)
-  const sorted = [...p.tasks].sort((a, b) => b.task_frequency - a.task_frequency).slice(0, 5);
+  const sorted = [...p.tasks].sort((a, b) =>
+    (b.onet_frequency_score ?? b.task_frequency) -
+    (a.onet_frequency_score ?? a.task_frequency)
+  ).slice(0, 5);
   const thead = $('thead', 'task-breakdown-table__head', {}, [
     $('tr', 'task-breakdown-table__header-row', {}, [
       $('th', 'task-breakdown-table__th col--task-name', { text: 'Tasks' }),
@@ -931,7 +1007,7 @@ function renderStep2() {
     $('tr', 'task-breakdown-table__source-row', {}, [
       $('td', 'task-breakdown-table__sources', {
         colspan: '5',
-        text: 'Sources: O*NET Database task frequency ratings (https://www.onetcenter.org/database.html); Anthropic Economic Index, "Which Economic Tasks are Performed with AI?", for automation/augmentation exposure and human-only vs. human-with-AI timing (https://huggingface.co/datasets/Anthropic/EconomicIndex); BLS OEWS wage data for hourly rates (https://www.bls.gov/oes/tables.htm).'
+        text: 'Sources: O*NET Task Ratings FT category data from the uploaded workbook, collapsed into weighted task-frequency scores; O*NET OnLine task counts by occupation (https://www.onetonline.org/); Anthropic Economic Index, "Which Economic Tasks are Performed with AI?", for automation/augmentation exposure and human-only vs. human-with-AI timing (https://huggingface.co/datasets/Anthropic/EconomicIndex); BLS OEWS wage data for hourly rates (https://www.bls.gov/oes/tables.htm).'
       })
     ])
   ]);
@@ -963,8 +1039,11 @@ function renderStep3() {
   const heading = $('h1', 'step__heading', { text: 'Agent workflow' });
   const sub = $('p', 'step__subheading', { text: 'Click a task to see its agent. Tasks with a demo badge support a simulated agent run.' });
 
-  // Sort by frequency desc
-  const sorted = [...p.tasks].sort((a, b) => b.task_frequency - a.task_frequency);
+  // Sort by O*NET frequency desc, falling back to seeded task frequency.
+  const sorted = [...p.tasks].sort((a, b) =>
+    (b.onet_frequency_score ?? b.task_frequency) -
+    (a.onet_frequency_score ?? a.task_frequency)
+  );
 
   const diagramSection = $('section', 'workflow-diagram');
   const nodeList = $('ol', 'workflow-diagram__nodes');

@@ -21,12 +21,53 @@ const { TOOLS_BY_PERSONA, REQUIRED_PERSONA_KEYS: SCHEMA_PERSONA_KEYS, REQUIRED_T
 
 const CONFIDENCE_THRESHOLD = 80;
 
+const ONET_TASK_COUNTS = Object.freeze({
+  editor: {
+    soc_code: '27-3041.00',
+    occupation_title: 'Editors',
+    task_count: 21,
+    frequency_total: 90.3618,
+    source_url: 'https://www.onetonline.org/link/details/27-3041.00',
+  },
+  financial_advisor: {
+    soc_code: '13-2052.00',
+    occupation_title: 'Personal Financial Advisors',
+    task_count: 21,
+    frequency_total: 61.9598,
+    source_url: 'https://www.onetonline.org/link/details/13-2052.00',
+  },
+  teacher: {
+    soc_code: '25-2031.00',
+    occupation_title:
+      'Secondary School Teachers, Except Special and Career/Technical Education',
+    task_count: 32,
+    frequency_total: 132.4725,
+    source_url: 'https://www.onetonline.org/link/details/25-2031.00',
+  },
+  project_manager: {
+    soc_code: '13-1082.00',
+    occupation_title: 'Project Management Specialists',
+    task_count: 21,
+    frequency_total: 79.6405,
+    frequency_proxy_soc_code: '15-1299.09',
+    frequency_proxy_title: 'Information Technology Project Managers',
+    source_url: 'https://www.onetonline.org/link/details/13-1082.00',
+  },
+  customer_service_rep: {
+    soc_code: '43-4051.00',
+    occupation_title: 'Customer Service Representatives',
+    task_count: 13,
+    frequency_total: 63.0777,
+    source_url: 'https://www.onetonline.org/link/details/43-4051.00',
+  },
+});
+
 /**
  * Build a task object with computed ROI and agent_enabled fields.
  * Keeps inline data terse while guaranteeing every required ontology field
  * is present and internally consistent.
  */
-function buildTask(hourlyRate, t) {
+function buildTask(hourlyRate, t, onetTaskMeta) {
   const timeSavedPct = Math.round(
     ((t.current_hours_weekly - t.projected_hours_weekly) /
       t.current_hours_weekly) *
@@ -39,6 +80,15 @@ function buildTask(hourlyRate, t) {
   return {
     task_name: t.task_name,
     task_frequency: t.task_frequency,
+    onet_task_id: t.onet_task_id || null,
+    onet_frequency_score: t.onet_frequency_score ?? null,
+    onet_frequency_total: onetTaskMeta.frequency_total,
+    onet_frequency_proxy_soc_code: onetTaskMeta.frequency_proxy_soc_code || null,
+    onet_frequency_proxy_title: onetTaskMeta.frequency_proxy_title || null,
+    onet_task_count: onetTaskMeta.task_count,
+    onet_soc_code: onetTaskMeta.soc_code,
+    onet_occupation_title: onetTaskMeta.occupation_title,
+    onet_task_source_url: onetTaskMeta.source_url,
     current_hours_weekly: t.current_hours_weekly,
     projected_hours_weekly: t.projected_hours_weekly,
     human_only_time: t.human_only_time ?? t.current_hours_weekly,
@@ -75,6 +125,8 @@ const personaSeeds = [
       {
         task_name: 'Copyedit drafts for grammar and style',
         task_frequency: 5,
+        onet_task_id: 1777,
+        onet_frequency_score: 5.6221,
         current_hours_weekly: 12,
         projected_hours_weekly: 3,
         confidence_interval_low: 65,
@@ -103,6 +155,8 @@ const personaSeeds = [
       {
         task_name: 'Fact-check claims and sources',
         task_frequency: 4,
+        onet_task_id: 1780,
+        onet_frequency_score: 5.1412,
         current_hours_weekly: 8,
         projected_hours_weekly: 3,
         confidence_interval_low: 45,
@@ -115,6 +169,8 @@ const personaSeeds = [
       {
         task_name: 'Write headlines and SEO metadata',
         task_frequency: 3,
+        onet_task_id: 1782,
+        onet_frequency_score: 4.8855,
         current_hours_weekly: 4,
         projected_hours_weekly: 1,
         confidence_interval_low: 60,
@@ -142,6 +198,8 @@ const personaSeeds = [
       {
         task_name: 'Coordinate with writers on revisions',
         task_frequency: 4,
+        onet_task_id: 1786,
+        onet_frequency_score: 5.1881,
         current_hours_weekly: 6,
         projected_hours_weekly: 4,
         confidence_interval_low: 20,
@@ -163,6 +221,8 @@ const personaSeeds = [
       {
         task_name: 'Prepare client portfolio review reports',
         task_frequency: 5,
+        onet_task_id: 12913,
+        onet_frequency_score: 3.48,
         current_hours_weekly: 10,
         projected_hours_weekly: 3,
         confidence_interval_low: 55,
@@ -190,6 +250,8 @@ const personaSeeds = [
       {
         task_name: 'Respond to client questions via email',
         task_frequency: 5,
+        onet_task_id: 12905,
+        onet_frequency_score: 3.2306,
         current_hours_weekly: 8,
         projected_hours_weekly: 3,
         confidence_interval_low: 40,
@@ -202,6 +264,8 @@ const personaSeeds = [
       {
         task_name: 'Run retirement scenario modeling',
         task_frequency: 3,
+        onet_task_id: 12904,
+        onet_frequency_score: 3.6151,
         current_hours_weekly: 6,
         projected_hours_weekly: 2,
         confidence_interval_low: 50,
@@ -227,6 +291,8 @@ const personaSeeds = [
       {
         task_name: 'Compliance documentation and KYC updates',
         task_frequency: 2,
+        onet_task_id: 12914,
+        onet_frequency_score: 3.0433,
         current_hours_weekly: 4,
         projected_hours_weekly: 2,
         confidence_interval_low: 25,
@@ -248,6 +314,8 @@ const personaSeeds = [
       {
         task_name: 'Grade student assignments and essays',
         task_frequency: 5,
+        onet_task_id: 6646,
+        onet_frequency_score: 4.9381,
         current_hours_weekly: 10,
         projected_hours_weekly: 4,
         confidence_interval_low: 45,
@@ -273,6 +341,8 @@ const personaSeeds = [
       {
         task_name: 'Build lesson plans and materials',
         task_frequency: 4,
+        onet_task_id: 6657,
+        onet_frequency_score: 4.224,
         current_hours_weekly: 6,
         projected_hours_weekly: 2,
         confidence_interval_low: 50,
@@ -285,6 +355,8 @@ const personaSeeds = [
       {
         task_name: 'Draft parent communications',
         task_frequency: 3,
+        onet_task_id: 6656,
+        onet_frequency_score: 3.4123,
         current_hours_weekly: 3,
         projected_hours_weekly: 1,
         confidence_interval_low: 55,
@@ -307,6 +379,8 @@ const personaSeeds = [
       {
         task_name: 'Differentiate instruction for IEP students',
         task_frequency: 3,
+        onet_task_id: 6644,
+        onet_frequency_score: 5.0154,
         current_hours_weekly: 4,
         projected_hours_weekly: 2,
         confidence_interval_low: 25,
@@ -328,6 +402,8 @@ const personaSeeds = [
       {
         task_name: 'Compile weekly status reports',
         task_frequency: 5,
+        onet_task_id: 16168,
+        onet_frequency_score: 3.9047,
         current_hours_weekly: 6,
         projected_hours_weekly: 1,
         confidence_interval_low: 65,
@@ -354,6 +430,8 @@ const personaSeeds = [
       {
         task_name: 'Run stand-ups and capture action items',
         task_frequency: 5,
+        onet_task_id: 16156,
+        onet_frequency_score: 4.9473,
         current_hours_weekly: 5,
         projected_hours_weekly: 2,
         confidence_interval_low: 40,
@@ -366,6 +444,8 @@ const personaSeeds = [
       {
         task_name: 'Maintain project schedules and Gantt charts',
         task_frequency: 4,
+        onet_task_id: 16170,
+        onet_frequency_score: 3.9044,
         current_hours_weekly: 5,
         projected_hours_weekly: 2,
         confidence_interval_low: 35,
@@ -378,6 +458,8 @@ const personaSeeds = [
       {
         task_name: 'Draft stakeholder communications',
         task_frequency: 3,
+        onet_task_id: 16161,
+        onet_frequency_score: 3.4286,
         current_hours_weekly: 4,
         projected_hours_weekly: 1,
         confidence_interval_low: 55,
@@ -400,6 +482,8 @@ const personaSeeds = [
       {
         task_name: 'Risk and issue log maintenance',
         task_frequency: 2,
+        onet_task_id: 16151,
+        onet_frequency_score: 3.4762,
         current_hours_weekly: 3,
         projected_hours_weekly: 1,
         confidence_interval_low: 30,
@@ -421,6 +505,8 @@ const personaSeeds = [
       {
         task_name: 'Respond to inbound support tickets',
         task_frequency: 5,
+        onet_task_id: 18565,
+        onet_frequency_score: 5.8767,
         current_hours_weekly: 20,
         projected_hours_weekly: 6,
         confidence_interval_low: 55,
@@ -445,6 +531,8 @@ const personaSeeds = [
       {
         task_name: 'Categorize and route incoming tickets',
         task_frequency: 5,
+        onet_task_id: 2582,
+        onet_frequency_score: 4.0592,
         current_hours_weekly: 6,
         projected_hours_weekly: 1,
         confidence_interval_low: 70,
@@ -457,6 +545,8 @@ const personaSeeds = [
       {
         task_name: 'Handle live chat conversations',
         task_frequency: 4,
+        onet_task_id: 2581,
+        onet_frequency_score: 4.8566,
         current_hours_weekly: 12,
         projected_hours_weekly: 6,
         confidence_interval_low: 35,
@@ -480,6 +570,8 @@ const personaSeeds = [
       {
         task_name: 'Process returns and refunds',
         task_frequency: 4,
+        onet_task_id: 2579,
+        onet_frequency_score: 4.988,
         current_hours_weekly: 5,
         projected_hours_weekly: 2,
         confidence_interval_low: 50,
@@ -492,6 +584,8 @@ const personaSeeds = [
       {
         task_name: 'Write QA notes and call summaries',
         task_frequency: 3,
+        onet_task_id: 2578,
+        onet_frequency_score: 5.7882,
         current_hours_weekly: 3,
         projected_hours_weekly: 1,
         confidence_interval_low: 45,
@@ -506,13 +600,24 @@ const personaSeeds = [
 ];
 
 const personas = personaSeeds.map((p) => ({
+  onet_task_count: ONET_TASK_COUNTS[p.persona_id].task_count,
+  onet_frequency_total: ONET_TASK_COUNTS[p.persona_id].frequency_total,
+  onet_frequency_proxy_soc_code:
+    ONET_TASK_COUNTS[p.persona_id].frequency_proxy_soc_code || null,
+  onet_frequency_proxy_title:
+    ONET_TASK_COUNTS[p.persona_id].frequency_proxy_title || null,
+  onet_soc_code: ONET_TASK_COUNTS[p.persona_id].soc_code,
+  onet_occupation_title: ONET_TASK_COUNTS[p.persona_id].occupation_title,
+  onet_task_source_url: ONET_TASK_COUNTS[p.persona_id].source_url,
   persona_id: p.persona_id,
   persona_name: p.persona_name,
   hourly_rate: p.hourly_rate,
   rate_source: p.rate_source,
   rate_detail: getRateEntry(p.persona_id),
   tools_used: p.tools_used,
-  tasks: p.tasks.map((t) => buildTask(p.hourly_rate, t)),
+  tasks: p.tasks.map((t) =>
+    buildTask(p.hourly_rate, t, ONET_TASK_COUNTS[p.persona_id])
+  ),
 }));
 
 // Use the canonical schema definitions from personaSchema.js so there is a
@@ -580,6 +685,7 @@ module.exports = {
   loadAnalysis,
   getPersonaIds,
   CONFIDENCE_THRESHOLD,
+  ONET_TASK_COUNTS,
   REQUIRED_PERSONA_KEYS,
   REQUIRED_TASK_KEYS,
   validatePersonaDeep,

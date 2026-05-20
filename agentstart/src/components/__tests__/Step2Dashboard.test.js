@@ -44,12 +44,12 @@ test('Step2Dashboard renders four KPI tiles and a responsive table wrapper', () 
   assert.equal(tableWrap.children[0], root.breakdownTable);
 });
 
-test('Step2Dashboard task rows are ordered by descending frequency', () => {
+test('Step2Dashboard task rows are ordered by descending O*NET frequency', () => {
   const persona = personas[0];
   const doc = createFakeDocument();
   const root = createStep2Dashboard({ persona, document: doc });
 
-  const expectedOrder = sortTasksByDimension(persona.tasks, 'task_frequency')
+  const expectedOrder = sortTasksByDimension(persona.tasks, 'onet_frequency_score')
     .slice(0, 5)
     .map((t) => t.task_name);
   const renderedOrder = root.taskRows.map(

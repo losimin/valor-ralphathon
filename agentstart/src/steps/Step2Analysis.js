@@ -1,11 +1,6 @@
 // AgentStart - Step 2: Workflow Analysis
 
-const {
-  computePersonaKpis,
-  DASHBOARD_WORK_WEEK_HOURS,
-  DAYS_PER_MONTH,
-  DAYS_PER_WEEK,
-} = require('../lib/kpi');
+const { computePersonaKpis } = require('../lib/kpi');
 const { createKpiDisplay } = require('../components/KpiDisplay');
 const { createTaskBreakdownTable } = require('../components/TaskBreakdownTable');
 
@@ -38,34 +33,8 @@ function createStep2Analysis({ persona, document: docArg, onBack, onNext } = {})
 
   const kpiData = computePersonaKpis(persona);
   const rateDetail = persona.rate_detail || {};
-  const annualWageText = rateDetail.mean_annual_wage
-    ? `$${rateDetail.mean_annual_wage.toLocaleString()}`
-    : 'BLS mean annual wage';
-  const calculationDetails = {
-    tasksAutomated:
-      'Count of tasks whose automation confidence is at least 80%.',
-    hoursSavedWeekly:
-      [
-        'Sum of per-task hours saved.',
-        'Uses each task frequency share.',
-        `Applies a ${DASHBOARD_WORK_WEEK_HOURS}-hour work week.`,
-        'Compares human-only vs. human-with-AI task time.',
-      ].join('\n'),
-    timeSavedPct:
-      [
-        'Total hours saved.',
-        `Divided by the ${DASHBOARD_WORK_WEEK_HOURS}-hour weekly baseline.`,
-      ].join('\n'),
-    roiMonthly:
-      [
-        'Sum of task ROI/month.',
-        `Hourly rate input: ${annualWageText} / 2,080 work-year hours = ~$${persona.hourly_rate}/hr.`,
-        `Formula per task: hourly rate * (hours saved/week / ${DAYS_PER_WEEK}) * ${DAYS_PER_MONTH}.`,
-      ].join('\n'),
-  };
   const kpiDisplay = createKpiDisplay({
     kpis: kpiData,
-    calculationDetails,
     document: doc,
   });
   root.appendChild(kpiDisplay);
@@ -75,7 +44,7 @@ function createStep2Analysis({ persona, document: docArg, onBack, onNext } = {})
     tasks: persona.tasks,
     hourlyRate: persona.hourly_rate,
     rateDetail,
-    sortDimension: 'task_frequency',
+    sortDimension: 'onet_frequency_score',
     document: doc,
   });
   const tableWrap = doc.createElement('div');
