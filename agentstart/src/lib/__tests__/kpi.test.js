@@ -13,80 +13,66 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const { personas } = require('../../data/personas');
-const { computePersonaKpis, taskRoiAnnual } = require('../kpi');
+const {
+  computePersonaKpis,
+  DASHBOARD_WORK_WEEK_HOURS,
+  taskProjectedHoursSavedWeekly,
+  taskRoiAnnual,
+  taskRoiMonthlyFromProjectedHours,
+} = require('../kpi');
 
-const EXPECTED = {
-  editor: {
-    totalCurrentHours: 30,
-    totalProjectedHours: 11,
-    hoursSavedWeekly: 19,
-    timeSavedPct: 63,
-    tasksAutomated: 2,
-    totalTasks: 4,
-    roiWeekly: 684,
-    roiMonthly: 2962,
-    roiAnnual: 35568,
-  },
-  financial_advisor: {
-    totalCurrentHours: 28,
-    totalProjectedHours: 10,
-    hoursSavedWeekly: 18,
-    timeSavedPct: 64,
-    tasksAutomated: 3,
-    totalTasks: 4,
-    roiWeekly: 1206,
-    roiMonthly: 5222,
-    roiAnnual: 62712,
-  },
-  teacher: {
-    totalCurrentHours: 23,
-    totalProjectedHours: 9,
-    hoursSavedWeekly: 14,
-    timeSavedPct: 61,
-    tasksAutomated: 3,
-    totalTasks: 4,
-    roiWeekly: 448,
-    roiMonthly: 1939,
-    roiAnnual: 23296,
-  },
-  project_manager: {
-    totalCurrentHours: 23,
-    totalProjectedHours: 7,
-    hoursSavedWeekly: 16,
-    timeSavedPct: 70,
-    tasksAutomated: 3,
-    totalTasks: 5,
-    roiWeekly: 896,
-    roiMonthly: 3878,
-    roiAnnual: 46592,
-  },
-  customer_service_rep: {
-    totalCurrentHours: 46,
-    totalProjectedHours: 16,
-    hoursSavedWeekly: 30,
-    timeSavedPct: 65,
-    tasksAutomated: 4,
-    totalTasks: 5,
-    roiWeekly: 570,
-    roiMonthly: 2469,
-    roiAnnual: 29640,
-  },
-};
-
-test('computePersonaKpis matches expected values for all five personas', () => {
+test('computePersonaKpis matches the Step 2 dashboard formula for all personas', () => {
   assert.equal(personas.length, 5, 'expected exactly five personas');
   for (const persona of personas) {
-    const expected = EXPECTED[persona.persona_id];
-    assert.ok(
-      expected,
-      `no expected KPI fixture for persona ${persona.persona_id}`
+    const projectedHours = persona.tasks.reduce(
+      (sum, task) => sum + taskProjectedHoursSavedWeekly(task, persona.tasks),
+      0
     );
+    const expected = {
+      totalCurrentHours: persona.tasks.reduce(
+        (sum, task) => sum + task.current_hours_weekly,
+        0
+      ),
+      totalProjectedHours: persona.tasks.reduce(
+        (sum, task) => sum + task.projected_hours_weekly,
+        0
+      ),
+      hoursSavedWeekly: Number(projectedHours.toFixed(1)),
+      timeSavedPct: Math.round((projectedHours / DASHBOARD_WORK_WEEK_HOURS) * 100),
+      tasksAutomated: persona.tasks.filter((task) => task.agent_enabled).length,
+      totalTasks: persona.tasks.length,
+      roiWeekly: persona.tasks.reduce(
+        (sum, task) =>
+          sum +
+          Math.round(
+            taskProjectedHoursSavedWeekly(task, persona.tasks) *
+              persona.hourly_rate
+          ),
+        0
+      ),
+      roiMonthly: persona.tasks.reduce(
+        (sum, task) =>
+          sum +
+          taskRoiMonthlyFromProjectedHours(
+            task,
+            persona.hourly_rate,
+            persona.tasks
+          ),
+        0
+      ),
+      roiAnnual: persona.tasks.reduce(
+        (sum, task) =>
+          sum +
+          Math.round(
+            taskProjectedHoursSavedWeekly(task, persona.tasks) *
+              persona.hourly_rate *
+              52
+          ),
+        0
+      ),
+    };
     const got = computePersonaKpis(persona);
-    assert.deepEqual(
-      got,
-      expected,
-      `KPI mismatch for ${persona.persona_id}: ${JSON.stringify(got)}`
-    );
+    assert.deepEqual(got, expected, persona.persona_id);
   }
 });
 

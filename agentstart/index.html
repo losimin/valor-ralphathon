@@ -132,6 +132,9 @@ body {
   margin-bottom: 8px;
   letter-spacing: -0.02em;
 }
+.step--analysis .step__heading {
+  margin-bottom: 28px;
+}
 .step__subheading {
   color: var(--color-text-secondary);
   font-size: 1.05rem;
@@ -179,18 +182,9 @@ body {
 }
 
 /* ── Step 2: KPI Dashboard ─────────────────────────────── */
-.analysis__rate {
-  color: var(--color-text-secondary);
-  font-size: 0.85rem;
-  margin-bottom: 24px;
-  padding: 6px 12px;
-  background: var(--color-primary-light);
-  border-radius: 6px;
-  display: inline-block;
-}
 .kpi-display {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
   margin-bottom: 36px;
 }
@@ -217,10 +211,40 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
+.calculation-details {
+  display: block;
+}
+.calculation-details__summary {
+  list-style: none;
+  cursor: pointer;
+}
+.calculation-details__summary::-webkit-details-marker { display: none; }
+.calculation-details__summary:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.calculation-details__body {
+  margin-top: 8px;
+  color: var(--color-text-secondary);
+  font-family: var(--font);
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.45;
+  white-space: pre-line;
+}
+.calculation-details--kpi .calculation-details__body {
+  text-align: left;
+}
 
 /* Task Breakdown Table */
+.task-breakdown-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
 table.task-breakdown-table {
   width: 100%;
+  min-width: 760px;
   border-collapse: collapse;
   font-size: 0.875rem;
 }
@@ -240,21 +264,25 @@ table.task-breakdown-table {
   border-bottom: 1px solid var(--color-border);
 }
 .task-breakdown-table tbody tr:hover { background: #f9fafb; }
+.task-breakdown-table__total-row td {
+  padding: 12px;
+  border-top: 2px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  background: #f9fafb;
+  font-weight: 700;
+}
 .col--task-name { font-weight: 500; min-width: 200px; }
-.col--frequency { text-align: center; }
-.col--ci-low, .col--ci-high {
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
-  color: #6b7280;
-}
-.col--auto-confidence {
-  font-family: var(--font-mono);
-  font-weight: 600;
-}
-.col--roi-weekly, .col--roi-monthly {
+.col--projected-saved,
+.col--roi-monthly {
   font-family: var(--font-mono);
   font-weight: 600;
   color: var(--color-success);
+}
+.task-breakdown-table__sources {
+  padding: 14px 12px 0;
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  line-height: 1.5;
 }
 
 /* ── Step 3: Workflow Diagram ──────────────────────────── */
@@ -583,6 +611,10 @@ table.task-breakdown-table {
 }
 
 /* ── Responsive ────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .kpi-display { grid-template-columns: repeat(2, 1fr); }
+}
+
 @media (max-width: 640px) {
   .step { padding: 24px 16px; }
   .persona-grid { grid-template-columns: repeat(2, 1fr); }
@@ -606,23 +638,23 @@ table.task-breakdown-table {
 // ── Data: Hourly Rates (BLS OEWS May 2023) ──────────────────
 const hourlyRates = {
   editor: {
-    rate: 36, source:
+    rate: 36, meanAnnual: 74060, source:
     'BLS OEWS May 2023 — Editors (SOC 27-3041), mean annual wage $74,060. ~$36/hr.'
   },
   financial_advisor: {
-    rate: 67, source:
+    rate: 67, meanAnnual: 137740, source:
     'BLS OEWS May 2023 — Personal Financial Advisors (SOC 13-2052), mean annual wage $137,740. ~$67/hr.'
   },
   teacher: {
-    rate: 32, source:
+    rate: 32, meanAnnual: 65540, source:
     'BLS OEWS May 2023 — Secondary School Teachers (SOC 25-2031), mean annual wage $65,540. ~$32/hr.'
   },
   project_manager: {
-    rate: 56, source:
+    rate: 56, meanAnnual: 116000, source:
     'BLS OEWS May 2023 — Project Management Specialists (SOC 13-1082), mean annual wage $116,000. ~$56/hr.'
   },
   customer_service_rep: {
-    rate: 19, source:
+    rate: 19, meanAnnual: 39680, source:
     'BLS OEWS May 2023 — Customer Service Representatives (SOC 43-4051), mean annual wage $39,680. ~$19/hr.'
   }
 };
@@ -715,6 +747,7 @@ const personas = personaSeeds.map(p => ({
   ...p,
   hourly_rate: hourlyRates[p.persona_id].rate,
   rate_source: hourlyRates[p.persona_id].source,
+  rate_detail: hourlyRates[p.persona_id],
   tasks: p.tasks.map(t => buildTask(hourlyRates[p.persona_id].rate, t))
 }));
 
@@ -784,7 +817,7 @@ function renderStepIndicator() {
 // ── Step 1: Persona Select ────────────────────────────────
 function renderStep1() {
   const heading = $('h1', 'step__heading', { text: 'Choose your role' });
-  const sub = $('p', 'step__subheading', { text: 'AgentStart will audit your weekly workflow and recommend agents tailored to your role.' });
+  const sub = $('p', 'step__subheading', { text: 'AgentStart audits your weekly workflow and recommends AI agents tailored to your role.' });
 
   const cards = personas.map(p => {
     const icon = $('span', 'persona-card__icon', { text: p.icon });
@@ -805,51 +838,68 @@ function renderStep1() {
 function renderStep2() {
   const p = state.persona;
   const heading = $('h1', 'step__heading', { text: `Workflow analysis for ${p.persona_name}` });
-  const rate = $('p', 'analysis__rate', { text: `Hourly rate: $${p.hourly_rate}/hr · ${p.rate_source}` });
+  const calcDetails = (value, detail, summaryClass) =>
+    $('details', 'calculation-details', {}, [
+      $('summary', `calculation-details__summary ${summaryClass || ''}`, { text: value }),
+      $('div', 'calculation-details__body', { text: detail })
+    ]);
 
-  // Compute KPIs
-  let totalCurrent = 0, totalProjected = 0, roiWeekly = 0, roiMonthly = 0, tasksAuto = 0;
-  p.tasks.forEach(t => {
-    totalCurrent += t.current_hours_weekly;
-    totalProjected += t.projected_hours_weekly;
-    roiWeekly += t.roi_weekly;
-    roiMonthly += t.roi_monthly;
-    if (t.agent_enabled) tasksAuto++;
-  });
-  const hoursSaved = totalCurrent - totalProjected;
-  const pctSaved = totalCurrent ? Math.round((hoursSaved / totalCurrent) * 100) : 0;
-  const roiAnnual = roiWeekly * 52;
+  const totalFrequency = p.tasks.reduce((sum, t) => sum + t.task_frequency, 0);
+  const exposureToLlm = (t) => t.agent_enabled ? 'Automation' : 'Augmentation';
+  const projectedHoursSaved = (t) => {
+    const humanOnly = t.human_only_time ?? t.current_hours_weekly;
+    const humanWithAi = t.human_with_ai_time ?? t.projected_hours_weekly;
+    if (!totalFrequency || !humanOnly || humanWithAi >= humanOnly) return 0;
+    return ((t.task_frequency / totalFrequency) * 40 / humanOnly) *
+      ((humanOnly - humanWithAi) / humanOnly);
+  };
+  const monthlyRoi = (t) => Math.round(p.hourly_rate * (projectedHoursSaved(t) / 7) * 30);
+  const projectedDetail = (t) => {
+    const humanOnly = t.human_only_time ?? t.current_hours_weekly;
+    const humanWithAi = t.human_with_ai_time ?? t.projected_hours_weekly;
+    const share = totalFrequency ? ((t.task_frequency / totalFrequency) * 100).toFixed(1) : '0.0';
+    const reduction = humanOnly ? (((humanOnly - humanWithAi) / humanOnly) * 100).toFixed(1) : '0.0';
+    return [
+      `Frequency share: ${t.task_frequency}/${totalFrequency} (${share}%).`,
+      'Weekly baseline: 40 hours.',
+      `Human-only time: ${humanOnly}h; human-with-AI time: ${humanWithAi}h.`,
+      `Formula: frequency share * 40 / human-only time * time reduction (${reduction}%).`
+    ].join('\n');
+  };
+  const roiDetail = (t) =>
+    [
+      `Hourly rate input: ${annualWageText} / 2,080 work-year hours = ~$${p.hourly_rate}/hr.`,
+      `Hours saved/week: ${Number(projectedHoursSaved(t).toFixed(1))}h.`,
+      `Formula: $${p.hourly_rate}/hr * (${Number(projectedHoursSaved(t).toFixed(3))} / 7) * 30.`
+    ].join('\n');
+  const tasksAuto = p.tasks.filter(t => t.agent_enabled).length;
+  const hoursSaved = p.tasks.reduce((sum, t) => sum + projectedHoursSaved(t), 0);
+  const pctSaved = Math.round((hoursSaved / 40) * 100);
+  const roiMonthly = p.tasks.reduce((sum, t) => sum + monthlyRoi(t), 0);
+  const annualWageText = `$${p.rate_detail.meanAnnual.toLocaleString()}`;
 
   const kpiItems = [
-    { val: `${pctSaved}%`, label: 'Time Saved' },
-    { val: `${hoursSaved}h`, label: 'Hours Saved / Week' },
-    { val: `${tasksAuto} of ${p.tasks.length}`, label: 'Tasks Automated' },
-    { val: `$${roiWeekly.toLocaleString()}`, label: 'Weekly ROI' },
-    { val: `$${roiMonthly.toLocaleString()}`, label: 'Monthly ROI' },
-    { val: `$${roiAnnual.toLocaleString()}`, label: 'Annual ROI' }
+    { val: `${tasksAuto} of ${p.tasks.length}`, label: 'No. of Tasks Automated', detail: 'Count of tasks whose automation confidence is at least 80%.' },
+    { val: `${Number(hoursSaved.toFixed(1))}h`, label: 'Total Hours Saved / Week', detail: ['Sum of per-task hours saved.', 'Uses each task frequency share.', 'Applies a 40-hour work week.', 'Compares human-only vs. human-with-AI task time.'].join('\n') },
+    { val: `${pctSaved}%`, label: 'Time Saved', detail: ['Total hours saved.', 'Divided by the 40-hour weekly baseline.'].join('\n') },
+    { val: `$${roiMonthly.toLocaleString()}`, label: 'Monthly ROI', detail: ['Sum of task ROI/month.', `Hourly rate input: ${annualWageText} / 2,080 work-year hours = ~$${p.hourly_rate}/hr.`, 'Formula per task: hourly rate * (hours saved/week / 7) * 30.'].join('\n') }
   ];
 
   const kpiGrid = $('div', 'kpi-display', {}, kpiItems.map(k =>
     $('div', 'kpi-display__item', {}, [
-      $('div', 'kpi-display__value', { text: k.val }),
+      calcDetails(k.val, k.detail, 'kpi-display__value'),
       $('div', 'kpi-display__label', { text: k.label })
     ])
   ));
 
   // Task breakdown table ordered by frequency (descending)
-  const sorted = [...p.tasks].sort((a, b) => b.task_frequency - a.task_frequency);
+  const sorted = [...p.tasks].sort((a, b) => b.task_frequency - a.task_frequency).slice(0, 5);
   const thead = $('thead', 'task-breakdown-table__head', {}, [
     $('tr', 'task-breakdown-table__header-row', {}, [
-      $('th', 'task-breakdown-table__th col--task-name', { text: 'Task' }),
-      $('th', 'task-breakdown-table__th col--frequency', { text: 'Freq' }),
-      $('th', 'task-breakdown-table__th', { text: 'Current hrs/wk' }),
-      $('th', 'task-breakdown-table__th', { text: 'Proj. hrs/wk' }),
-      $('th', 'task-breakdown-table__th', { text: 'Time Saved' }),
-      $('th', 'task-breakdown-table__th col--ci-low', { text: 'CI Low', 'data-ci-column': 'true' }),
-      $('th', 'task-breakdown-table__th col--ci-high', { text: 'CI High', 'data-ci-column': 'true' }),
-      $('th', 'task-breakdown-table__th col--auto-confidence', { text: 'Auto Conf' }),
-      $('th', 'task-breakdown-table__th col--roi-weekly', { text: 'ROI/wk' }),
-      $('th', 'task-breakdown-table__th col--roi-monthly', { text: 'ROI/mo' }),
+      $('th', 'task-breakdown-table__th col--task-name', { text: 'Tasks' }),
+      $('th', 'task-breakdown-table__th col--exposure', { text: 'Exposure to LLM' }),
+      $('th', 'task-breakdown-table__th col--projected-saved', { text: 'Hours saved / week' }),
+      $('th', 'task-breakdown-table__th col--roi-monthly', { text: 'ROI / month' }),
       $('th', 'task-breakdown-table__th col--agent-name', { text: 'Agent' })
     ])
   ]);
@@ -857,20 +907,37 @@ function renderStep2() {
   const tbody = $('tbody', 'task-breakdown-table__body', {}, sorted.map((t, i) =>
     $('tr', 'task-breakdown-table__row', { 'data-task-index': String(i), 'data-task-name': t.task_name }, [
       $('td', 'task-breakdown-table__td col--task-name', { text: t.task_name }),
-      $('td', 'task-breakdown-table__td col--frequency', { text: String(t.task_frequency) }),
-      $('td', 'task-breakdown-table__td', { text: String(t.current_hours_weekly) }),
-      $('td', 'task-breakdown-table__td', { text: String(t.projected_hours_weekly) }),
-      $('td', 'task-breakdown-table__td col--time-saved', { text: `${t.time_saved_pct}%` }),
-      $('td', 'task-breakdown-table__td col--ci-low', { text: `${t.confidence_interval_low}%` }),
-      $('td', 'task-breakdown-table__td col--ci-high', { text: `${t.confidence_interval_high}%` }),
-      $('td', 'task-breakdown-table__td col--auto-confidence', { text: `${t.automation_confidence}%` }),
-      $('td', 'task-breakdown-table__td col--roi-weekly', { text: `$${t.roi_weekly.toLocaleString()}` }),
-      $('td', 'task-breakdown-table__td col--roi-monthly', { text: `$${t.roi_monthly.toLocaleString()}` }),
+      $('td', 'task-breakdown-table__td col--exposure', { text: exposureToLlm(t) }),
+      $('td', 'task-breakdown-table__td col--projected-saved', {}, [
+        calcDetails(`${Number(projectedHoursSaved(t).toFixed(1))}h`, projectedDetail(t))
+      ]),
+      $('td', 'task-breakdown-table__td col--roi-monthly', {}, [
+        calcDetails(`$${monthlyRoi(t).toLocaleString()}`, roiDetail(t))
+      ]),
       $('td', 'task-breakdown-table__td col--agent-name', { text: t.agent_name })
     ])
   ));
+  const totalHoursSaved = sorted.reduce((sum, t) => sum + projectedHoursSaved(t), 0);
+  const totalMonthlyRoi = sorted.reduce((sum, t) => sum + monthlyRoi(t), 0);
 
-  const table = $('table', 'task-breakdown-table', {}, [thead, tbody]);
+  const tfoot = $('tfoot', 'task-breakdown-table__foot', {}, [
+    $('tr', 'task-breakdown-table__total-row', {}, [
+      $('td', 'task-breakdown-table__td task-breakdown-table__total col--task-name', { text: 'Total' }),
+      $('td', 'task-breakdown-table__td task-breakdown-table__total col--exposure', { text: '' }),
+      $('td', 'task-breakdown-table__td task-breakdown-table__total col--projected-saved', { text: `${Number(totalHoursSaved.toFixed(1))}h` }),
+      $('td', 'task-breakdown-table__td task-breakdown-table__total col--roi-monthly', { text: `$${totalMonthlyRoi.toLocaleString()}` }),
+      $('td', 'task-breakdown-table__td task-breakdown-table__total col--agent-name', { text: '' })
+    ]),
+    $('tr', 'task-breakdown-table__source-row', {}, [
+      $('td', 'task-breakdown-table__sources', {
+        colspan: '5',
+        text: 'Sources: O*NET Database task frequency ratings (https://www.onetcenter.org/database.html); Anthropic Economic Index, "Which Economic Tasks are Performed with AI?", for automation/augmentation exposure and human-only vs. human-with-AI timing (https://huggingface.co/datasets/Anthropic/EconomicIndex); BLS OEWS wage data for hourly rates (https://www.bls.gov/oes/tables.htm).'
+      })
+    ])
+  ]);
+  const table = $('div', 'task-breakdown-table-wrap', {}, [
+    $('table', 'task-breakdown-table', {}, [thead, tbody, tfoot])
+  ]);
 
   const researchNote = $('p', '', { text: 'Efficiency estimates grounded in: Eloundou et al. (2023), "GPTs are GPTs: An Early Look at the Labor Market Impact Potential of Large Language Models," arXiv:2303.10130; and Anthropic Economic Index (2024–2025), "Which Economic Tasks are Performed with AI?"', style: 'font-size:0.75rem;color:#9ca3af;margin-top:16px;font-style:italic;' });
 
@@ -878,8 +945,8 @@ function renderStep2() {
   const next = $('button', 'step__next step__next--primary', { onClick: () => advanceToStep(3), text: 'View agent workflow →' });
   const nav = $('div', 'step__nav', {}, [back, next]);
 
-  const section = $('section', 'step', { 'data-step': '2', 'data-persona-id': p.persona_id },
-    [heading, rate, kpiGrid, table, researchNote, nav]);
+  const section = $('section', 'step step--analysis', { 'data-step': '2', 'data-persona-id': p.persona_id },
+    [heading, kpiGrid, table, nav]);
   return section;
 }
 

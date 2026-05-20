@@ -49,7 +49,7 @@ function createStep1PersonaSelect({
   const subheading = doc.createElement('p');
   subheading.className = 'step__subheading';
   subheading.textContent =
-    'AgentStart will audit your weekly workflow and recommend agents tailored to your role.';
+    'AgentStart audits your weekly workflow and recommends AI agents tailored to your role.';
   root.appendChild(subheading);
 
   // Delegate grid rendering to the PersonaGrid component.

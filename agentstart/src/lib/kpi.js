@@ -14,6 +14,9 @@
 //   - Anthropic Economic Index reports (2024–2025)
 
 const WEEKS_PER_MONTH = 4.33; // standard 52/12 conversion
+const DASHBOARD_WORK_WEEK_HOURS = 40;
+const DAYS_PER_WEEK = 7;
+const DAYS_PER_MONTH = 30;
 
 function ensureTasks(persona) {
   if (!persona || typeof persona !== 'object') {
@@ -57,6 +60,61 @@ function taskRoiAnnual(task, hourlyRate) {
   return Math.round(hoursSavedWeekly(task) * hourlyRate * WEEKS_PER_YEAR);
 }
 
+function totalTaskFrequency(tasks) {
+  return tasks.reduce((sum, task) => {
+    const frequency =
+      typeof task.task_frequency === 'number' && Number.isFinite(task.task_frequency)
+        ? task.task_frequency
+        : 0;
+    return sum + Math.max(0, frequency);
+  }, 0);
+}
+
+function humanOnlyTime(task) {
+  return typeof task.human_only_time === 'number'
+    ? task.human_only_time
+    : task.current_hours_weekly;
+}
+
+function humanWithAiTime(task) {
+  return typeof task.human_with_ai_time === 'number'
+    ? task.human_with_ai_time
+    : task.projected_hours_weekly;
+}
+
+function taskExposureToLlm(task) {
+  if (typeof task.exposure_to_llm === 'string' && task.exposure_to_llm) {
+    return task.exposure_to_llm;
+  }
+  return task.agent_enabled ? 'Automation' : 'Augmentation';
+}
+
+function taskProjectedHoursSavedWeekly(task, tasks) {
+  const totalFrequency = totalTaskFrequency(tasks);
+  const frequency =
+    typeof task.task_frequency === 'number' && Number.isFinite(task.task_frequency)
+      ? Math.max(0, task.task_frequency)
+      : 0;
+  const humanOnly = humanOnlyTime(task);
+  const humanWithAi = humanWithAiTime(task);
+
+  if (!totalFrequency || !humanOnly || humanWithAi >= humanOnly) {
+    return 0;
+  }
+
+  const frequencyShare = frequency / totalFrequency;
+  return (
+    (frequencyShare * DASHBOARD_WORK_WEEK_HOURS) /
+    humanOnly *
+    ((humanOnly - humanWithAi) / humanOnly)
+  );
+}
+
+function taskRoiMonthlyFromProjectedHours(task, hourlyRate, tasks) {
+  const hoursSaved = taskProjectedHoursSavedWeekly(task, tasks);
+  return Math.round(hourlyRate * (hoursSaved / DAYS_PER_WEEK) * DAYS_PER_MONTH);
+}
+
 /**
  * Compute the persona-level KPI bundle that Step 2 renders:
  *   totalCurrentHours, totalProjectedHours, hoursSavedWeekly,
@@ -81,24 +139,32 @@ function computePersonaKpis(persona) {
   let tasksAutomated = 0;
 
   for (const task of persona.tasks) {
+    const projectedHoursSaved = taskProjectedHoursSavedWeekly(task, persona.tasks);
     totalCurrent += task.current_hours_weekly;
     totalProjected += task.projected_hours_weekly;
-    roiWeekly += taskRoiWeekly(task, persona.hourly_rate);
-    roiMonthly += taskRoiMonthly(task, persona.hourly_rate);
-    roiAnnual += taskRoiAnnual(task, persona.hourly_rate);
+    roiWeekly += Math.round(projectedHoursSaved * persona.hourly_rate);
+    roiMonthly += taskRoiMonthlyFromProjectedHours(
+      task,
+      persona.hourly_rate,
+      persona.tasks
+    );
+    roiAnnual += Math.round(projectedHoursSaved * persona.hourly_rate * WEEKS_PER_YEAR);
     if (task.agent_enabled) tasksAutomated += 1;
   }
 
-  const hoursSaved = totalCurrent - totalProjected;
-  const timeSavedPct = totalCurrent
-    ? Math.round((hoursSaved / totalCurrent) * 100)
+  const hoursSaved = persona.tasks.reduce(
+    (sum, task) => sum + taskProjectedHoursSavedWeekly(task, persona.tasks),
+    0
+  );
+  const timeSavedPct = DASHBOARD_WORK_WEEK_HOURS
+    ? Math.round((hoursSaved / DASHBOARD_WORK_WEEK_HOURS) * 100)
     : 0;
   const totalTasks = persona.tasks.length;
 
   return {
     totalCurrentHours: totalCurrent,
     totalProjectedHours: totalProjected,
-    hoursSavedWeekly: hoursSaved,
+    hoursSavedWeekly: Number(hoursSaved.toFixed(1)),
     timeSavedPct,
     tasksAutomated,
     totalTasks,
@@ -111,10 +177,16 @@ function computePersonaKpis(persona) {
 module.exports = {
   WEEKS_PER_MONTH,
   WEEKS_PER_YEAR,
+  DASHBOARD_WORK_WEEK_HOURS,
+  DAYS_PER_WEEK,
+  DAYS_PER_MONTH,
   hoursSavedWeekly,
   taskTimeSavedPct,
   taskRoiWeekly,
   taskRoiMonthly,
   taskRoiAnnual,
+  taskExposureToLlm,
+  taskProjectedHoursSavedWeekly,
+  taskRoiMonthlyFromProjectedHours,
   computePersonaKpis,
 };

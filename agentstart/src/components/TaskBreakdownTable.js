@@ -1,94 +1,87 @@
-// AgentStart — TaskBreakdownTable component
+// AgentStart - TaskBreakdownTable component
 //
-// Renders a sortable task breakdown table with explicit confidence interval
-// columns. This component delegates ordering to lib/taskSort.js (canonical
-// sortTasksByDimension) so the table consistently matches Step 2's KPI
-// dashboard and Step 3's workflow diagram ordering.
-//
-// The table surfaces every numeric ontology field for a task — frequency,
-// current/projected hours, time-saved %, 95% CI bounds, automation confidence,
-// and ROI values — in a structured <table> element with <thead> / <tbody>
-// semantics so consuming code (Step2Analysis, Step4Configure, etc.) and
-// tests can rely on standard DOM traversal.
-//
-// Contract:
-//   createTaskBreakdownTable({ tasks, sortDimension, document })
-//     - tasks:          array of task objects from data/personas
-//     - sortDimension:  string — any valid sortTasksByDimension key
-//                       (defaults to 'task_frequency')
-//     - document:       DOM-like factory; defaults to global document
-//   Returns the root <table> element. The root carries .references for
-//   inspection in tests: root._tasks (sorted array), root._sortDimension.
-//
-// The confidence interval columns are rendered as "low – high" in a single
-// cell and also available as individual data attributes for test assertions.
+// Renders the Step 2 executive task table:
+// tasks, exposure to LLM, projected weekly hours saved, monthly ROI, and agent.
+// Rows are ordered by descending O*NET-derived task frequency and capped at
+// five rows. Source citations are rendered in the table footer.
 
 const { sortTasksByDimension } = require('../lib/taskSort');
-
-// ── Column definitions ─────────────────────────────────────────────────────
-// Each column spec describes: header label, accessor function, CSS modifier,
-// and optional formatter. Columns are defined in display order.
+const {
+  DASHBOARD_WORK_WEEK_HOURS,
+  DAYS_PER_MONTH,
+  DAYS_PER_WEEK,
+  taskExposureToLlm,
+  taskProjectedHoursSavedWeekly,
+  taskRoiMonthlyFromProjectedHours,
+} = require('../lib/kpi');
 
 const COLUMNS = Object.freeze([
   {
     key: 'task_name',
-    label: 'Task',
+    label: 'Tasks',
     className: 'col--task-name',
     accessor: (t) => t.task_name,
   },
   {
-    key: 'task_frequency',
-    label: 'Frequency',
-    className: 'col--frequency',
-    accessor: (t) => t.task_frequency,
+    key: 'exposure_to_llm',
+    label: 'Exposure to LLM',
+    className: 'col--exposure',
+    accessor: (t) => taskExposureToLlm(t),
   },
   {
-    key: 'current_hours_weekly',
-    label: 'Current hrs/wk',
-    className: 'col--current-hours',
-    accessor: (t) => `${t.current_hours_weekly}`,
+    key: 'projected_hours_saved_weekly',
+    label: 'Hours saved / week',
+    className: 'col--projected-saved',
+    accessor: (t, ctx) => {
+      const value = taskProjectedHoursSavedWeekly(t, ctx.tasks);
+      return `${Number(value.toFixed(1))}h`;
+    },
+    detail: (t, ctx) => {
+      const totalFrequency = ctx.tasks.reduce(
+        (sum, task) => sum + Math.max(0, task.task_frequency || 0),
+        0
+      );
+      const frequencyShare = totalFrequency
+        ? ((t.task_frequency / totalFrequency) * 100).toFixed(1)
+        : '0.0';
+      const humanOnly = t.human_only_time ?? t.current_hours_weekly;
+      const humanWithAi = t.human_with_ai_time ?? t.projected_hours_weekly;
+      const timeReduction = humanOnly
+        ? (((humanOnly - humanWithAi) / humanOnly) * 100).toFixed(1)
+        : '0.0';
+      return [
+        `Frequency share: ${t.task_frequency}/${totalFrequency} (${frequencyShare}%).`,
+        `Weekly baseline: ${DASHBOARD_WORK_WEEK_HOURS} hours.`,
+        `Human-only time: ${humanOnly}h; human-with-AI time: ${humanWithAi}h.`,
+        `Formula: frequency share * ${DASHBOARD_WORK_WEEK_HOURS} / human-only time * time reduction (${timeReduction}%).`,
+      ].join('\n');
+    },
   },
   {
-    key: 'projected_hours_weekly',
-    label: 'Projected hrs/wk',
-    className: 'col--projected-hours',
-    accessor: (t) => `${t.projected_hours_weekly}`,
-  },
-  {
-    key: 'time_saved_pct',
-    label: 'Time saved',
-    className: 'col--time-saved',
-    accessor: (t) => `${t.time_saved_pct}%`,
-  },
-  {
-    key: 'confidence_interval_low',
-    label: 'CI low',
-    className: 'col--ci-low',
-    accessor: (t) => `${t.confidence_interval_low}%`,
-  },
-  {
-    key: 'confidence_interval_high',
-    label: 'CI high',
-    className: 'col--ci-high',
-    accessor: (t) => `${t.confidence_interval_high}%`,
-  },
-  {
-    key: 'automation_confidence',
-    label: 'Auto confidence',
-    className: 'col--auto-confidence',
-    accessor: (t) => `${t.automation_confidence}%`,
-  },
-  {
-    key: 'roi_weekly',
-    label: 'ROI / wk',
-    className: 'col--roi-weekly',
-    accessor: (t) => `$${t.roi_weekly.toLocaleString()}`,
-  },
-  {
-    key: 'roi_monthly',
-    label: 'ROI / mo',
+    key: 'roi_monthly_projected',
+    label: 'ROI / month',
     className: 'col--roi-monthly',
-    accessor: (t) => `$${t.roi_monthly.toLocaleString()}`,
+    accessor: (t, ctx) =>
+      `$${taskRoiMonthlyFromProjectedHours(
+        t,
+        ctx.hourlyRate,
+        ctx.tasks
+      ).toLocaleString()}`,
+    detail: (t, ctx) => {
+      const projected = taskProjectedHoursSavedWeekly(t, ctx.tasks);
+      const rate = ctx.rateDetail || {};
+      const annualWage = rate.mean_annual_wage
+        ? `$${rate.mean_annual_wage.toLocaleString()}`
+        : 'the BLS mean annual wage';
+      const hourlyRateDetail = rate.mean_annual_wage
+        ? `${annualWage} / 2,080 work-year hours = ~$${ctx.hourlyRate}/hr`
+        : `BLS-derived hourly rate = $${ctx.hourlyRate}/hr`;
+      return [
+        `Hourly rate input: ${hourlyRateDetail}.`,
+        `Hours saved/week: ${Number(projected.toFixed(1))}h.`,
+        `Formula: $${ctx.hourlyRate}/hr * (${Number(projected.toFixed(3))} / ${DAYS_PER_WEEK}) * ${DAYS_PER_MONTH}.`,
+      ].join('\n');
+    },
   },
   {
     key: 'agent_name',
@@ -98,13 +91,12 @@ const COLUMNS = Object.freeze([
   },
 ]);
 
-// Keys that carry confidence interval information — used for test assertions
-// that CI columns are present.
-const CI_COLUMN_KEYS = ['confidence_interval_low', 'confidence_interval_high'];
-
 const DEFAULT_SORT_DIMENSION = 'task_frequency';
+const DEFAULT_MAX_ROWS = 5;
+const CI_COLUMN_KEYS = Object.freeze([]);
 
-// ── Helpers ─────────────────────────────────────────────────────────────────
+const SOURCE_NOTE =
+  'Sources: O*NET Database task frequency ratings (https://www.onetcenter.org/database.html); Anthropic Economic Index, "Which Economic Tasks are Performed with AI?", for automation/augmentation exposure and human-only vs. human-with-AI timing (https://huggingface.co/datasets/Anthropic/EconomicIndex); BLS OEWS wage data for hourly rates (https://www.bls.gov/oes/tables.htm).';
 
 function resolveDocument(explicit) {
   if (explicit) return explicit;
@@ -125,28 +117,25 @@ function validateArgs(tasks, sortDimension) {
   }
 }
 
-// ── Main factory ────────────────────────────────────────────────────────────
-
 function createTaskBreakdownTable({
   tasks,
+  hourlyRate = 0,
+  rateDetail = null,
+  maxRows = DEFAULT_MAX_ROWS,
   sortDimension = DEFAULT_SORT_DIMENSION,
   document: docArg,
 } = {}) {
   validateArgs(tasks, sortDimension);
   const doc = resolveDocument(docArg);
 
-  // Sort tasks using the canonical module — ensures consistency with
-  // Step 2 dashboard ordering, Step 3 workflow diagram, etc.
-  const sorted = sortTasksByDimension(tasks, sortDimension);
-
-  // ── Build table ────────────────────────────────────────────────────────
+  const sorted = sortTasksByDimension(tasks, sortDimension).slice(0, maxRows);
+  const context = { tasks, hourlyRate, rateDetail };
 
   const table = doc.createElement('table');
   table.className = 'task-breakdown-table';
   table.setAttribute('data-testid', 'task-breakdown-table');
   table.setAttribute('data-sort-dimension', sortDimension);
 
-  // <thead>
   const thead = doc.createElement('thead');
   thead.className = 'task-breakdown-table__head';
 
@@ -158,18 +147,12 @@ function createTaskBreakdownTable({
     th.className = `task-breakdown-table__th ${col.className}`;
     th.setAttribute('data-col-key', col.key);
     th.textContent = col.label;
-    // CI columns carry an extra attribute so tests can locate them
-    // without depending on display labels.
-    if (CI_COLUMN_KEYS.includes(col.key)) {
-      th.setAttribute('data-ci-column', 'true');
-    }
     headerRow.appendChild(th);
   }
 
   thead.appendChild(headerRow);
   table.appendChild(thead);
 
-  // <tbody>
   const tbody = doc.createElement('tbody');
   tbody.className = 'task-breakdown-table__body';
 
@@ -183,17 +166,21 @@ function createTaskBreakdownTable({
       const td = doc.createElement('td');
       td.className = `task-breakdown-table__td ${col.className}`;
       td.setAttribute('data-col-key', col.key);
-
-      const value = col.accessor(task);
-      td.textContent = value;
-
-      // For CI columns, expose the raw numeric value as a data attribute
-      // so tests can programmatically verify the interval values without
-      // parsing text content.
-      if (CI_COLUMN_KEYS.includes(col.key)) {
-        td.setAttribute('data-ci-value', String(task[col.key]));
+      if (typeof col.detail === 'function') {
+        const details = doc.createElement('details');
+        details.className = 'calculation-details';
+        const summary = doc.createElement('summary');
+        summary.className = 'calculation-details__summary';
+        summary.textContent = col.accessor(task, context);
+        const body = doc.createElement('div');
+        body.className = 'calculation-details__body';
+        body.textContent = col.detail(task, context);
+        details.appendChild(summary);
+        details.appendChild(body);
+        td.appendChild(details);
+      } else {
+        td.textContent = col.accessor(task, context);
       }
-
       tr.appendChild(td);
     }
 
@@ -203,11 +190,52 @@ function createTaskBreakdownTable({
 
   table.appendChild(tbody);
 
-  // ── Attach inspection references ───────────────────────────────────────
+  const tfoot = doc.createElement('tfoot');
+  tfoot.className = 'task-breakdown-table__foot';
+
+  const totalHoursSaved = sorted.reduce(
+    (sum, task) => sum + taskProjectedHoursSavedWeekly(task, tasks),
+    0
+  );
+  const totalMonthlyRoi = sorted.reduce(
+    (sum, task) =>
+      sum + taskRoiMonthlyFromProjectedHours(task, hourlyRate, tasks),
+    0
+  );
+  const totalRow = doc.createElement('tr');
+  totalRow.className = 'task-breakdown-table__total-row';
+  for (const col of COLUMNS) {
+    const td = doc.createElement('td');
+    td.className = `task-breakdown-table__td task-breakdown-table__total ${col.className}`;
+    td.setAttribute('data-col-key', col.key);
+    if (col.key === 'task_name') {
+      td.textContent = 'Total';
+    } else if (col.key === 'projected_hours_saved_weekly') {
+      td.textContent = `${Number(totalHoursSaved.toFixed(1))}h`;
+    } else if (col.key === 'roi_monthly_projected') {
+      td.textContent = `$${totalMonthlyRoi.toLocaleString()}`;
+    } else {
+      td.textContent = '';
+    }
+    totalRow.appendChild(td);
+  }
+  tfoot.appendChild(totalRow);
+
+  const sourceRow = doc.createElement('tr');
+  sourceRow.className = 'task-breakdown-table__source-row';
+  const sourceCell = doc.createElement('td');
+  sourceCell.className = 'task-breakdown-table__sources';
+  sourceCell.setAttribute('colspan', String(COLUMNS.length));
+  sourceCell.textContent = SOURCE_NOTE;
+  sourceRow.appendChild(sourceCell);
+  tfoot.appendChild(sourceRow);
+  table.appendChild(tfoot);
+
   table._tasks = sorted;
   table._sortDimension = sortDimension;
   table._dataRows = dataRows;
   table._columns = COLUMNS;
+  table._sourceNote = SOURCE_NOTE;
 
   return table;
 }
@@ -217,4 +245,6 @@ module.exports = {
   COLUMNS,
   CI_COLUMN_KEYS,
   DEFAULT_SORT_DIMENSION,
+  DEFAULT_MAX_ROWS,
+  SOURCE_NOTE,
 };

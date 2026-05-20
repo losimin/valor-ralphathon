@@ -41,6 +41,13 @@ function buildTask(hourlyRate, t) {
     task_frequency: t.task_frequency,
     current_hours_weekly: t.current_hours_weekly,
     projected_hours_weekly: t.projected_hours_weekly,
+    human_only_time: t.human_only_time ?? t.current_hours_weekly,
+    human_with_ai_time: t.human_with_ai_time ?? t.projected_hours_weekly,
+    exposure_to_llm:
+      t.exposure_to_llm ||
+      (t.automation_confidence >= CONFIDENCE_THRESHOLD
+        ? 'Automation'
+        : 'Augmentation'),
     time_saved_pct: timeSavedPct,
     confidence_interval_low: t.confidence_interval_low,
     confidence_interval_high: t.confidence_interval_high,
@@ -503,6 +510,7 @@ const personas = personaSeeds.map((p) => ({
   persona_name: p.persona_name,
   hourly_rate: p.hourly_rate,
   rate_source: p.rate_source,
+  rate_detail: getRateEntry(p.persona_id),
   tools_used: p.tools_used,
   tasks: p.tasks.map((t) => buildTask(p.hourly_rate, t)),
 }));

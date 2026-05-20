@@ -1,8 +1,7 @@
 // AgentStart — KpiDisplay component
 //
-// Renders the top-line KPI dashboard for a persona: efficiency gain %,
-// hours saved per week, tasks automated count, and ROI dollar values
-// (weekly, monthly, annual). Every value is rendered in large font via an
+// Renders the top-line KPI dashboard for a persona: tasks automated,
+// hours saved per week, time saved %, and monthly ROI. Every value is rendered in large font via an
 // inline style so the sizing holds even when no stylesheet is loaded
 // (required by Sub-AC 2c-i).
 //
@@ -13,43 +12,33 @@
 // (completion screen) without duplication.
 //
 // Contract:
-//   createKpiDisplay({ kpis, document })
+//   createKpiDisplay({ kpis, calculationDetails?, document })
 //     - kpis:     object from computePersonaKpis (kpi.js). Expected keys:
-//                 timeSavedPct, hoursSavedWeekly, tasksAutomated, totalTasks,
-//                 roiWeekly, roiMonthly, roiAnnual
+//                 tasksAutomated, totalTasks, hoursSavedWeekly,
+//                 timeSavedPct, roiMonthly
 //     - document: DOM-like factory; defaults to global document when present
 //   Returns the root element.
 
 const KPI_SPECS = [
+  {
+    key: 'tasksAutomated',
+    label: 'No. of tasks automated',
+    format: (v, kpis) => `${v} of ${kpis.totalTasks}`,
+    needsKpis: true,
+  },
+  {
+    key: 'hoursSavedWeekly',
+    label: 'Total hours saved / week',
+    format: (v) => `${Number.isInteger(v) ? v : v.toFixed(1)}h`,
+  },
   {
     key: 'timeSavedPct',
     label: 'Time saved',
     format: (v) => `${v}%`,
   },
   {
-    key: 'hoursSavedWeekly',
-    label: 'Hours saved / week',
-    format: (v) => `${v}h`,
-  },
-  {
-    key: 'tasksAutomated',
-    label: 'Tasks automated',
-    format: (v, kpis) => `${v} of ${kpis.totalTasks}`,
-    needsKpis: true,
-  },
-  {
-    key: 'roiWeekly',
-    label: 'Weekly ROI',
-    format: (v) => `$${v.toLocaleString()}`,
-  },
-  {
     key: 'roiMonthly',
     label: 'Monthly ROI',
-    format: (v) => `$${v.toLocaleString()}`,
-  },
-  {
-    key: 'roiAnnual',
-    label: 'Annual ROI',
     format: (v) => `$${v.toLocaleString()}`,
   },
 ];
@@ -67,9 +56,7 @@ const REQUIRED_KPI_KEYS = [
   'hoursSavedWeekly',
   'tasksAutomated',
   'totalTasks',
-  'roiWeekly',
   'roiMonthly',
-  'roiAnnual',
 ];
 
 function validateKpis(kpis) {
@@ -85,7 +72,7 @@ function validateKpis(kpis) {
   }
 }
 
-function createKpiDisplay({ kpis, document: docArg } = {}) {
+function createKpiDisplay({ kpis, calculationDetails = {}, document: docArg } = {}) {
   validateKpis(kpis);
   const doc = resolveDocument(docArg);
 
@@ -106,15 +93,32 @@ function createKpiDisplay({ kpis, document: docArg } = {}) {
       'font-size: 2.5rem; font-weight: 700; line-height: 1.1;';
 
     const rawValue = kpis[spec.key];
-    valueNode.textContent = spec.needsKpis
+    const formattedValue = spec.needsKpis
       ? spec.format(rawValue, kpis)
       : spec.format(rawValue);
+
+    if (calculationDetails[spec.key]) {
+      const details = doc.createElement('details');
+      details.className = 'calculation-details calculation-details--kpi';
+      const summary = doc.createElement('summary');
+      summary.className = valueNode.className;
+      summary.style = valueNode.style;
+      summary.textContent = formattedValue;
+      const body = doc.createElement('div');
+      body.className = 'calculation-details__body';
+      body.textContent = calculationDetails[spec.key];
+      details.appendChild(summary);
+      details.appendChild(body);
+      item.appendChild(details);
+    } else {
+      valueNode.textContent = formattedValue;
+      item.appendChild(valueNode);
+    }
 
     const labelNode = doc.createElement('div');
     labelNode.className = 'kpi-display__label';
     labelNode.textContent = spec.label;
 
-    item.appendChild(valueNode);
     item.appendChild(labelNode);
     root.appendChild(item);
   }

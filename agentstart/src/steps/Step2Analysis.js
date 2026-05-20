@@ -1,24 +1,11 @@
-// AgentStart — Step 2: Workflow Analysis
-//
-// Renders the pre-populated workflow analysis for a single persona. This is
-// the view that mounts when the user picks a card in Step 1. The seed's
-// ontology is exposed here via the KpiDisplay component (top-line KPIs) and
-// a per-task breakdown so downstream steps (workflow diagram, agent config)
-// can reuse the same data module without recomputation.
-//
-// KPI computation is delegated to lib/kpi.js and rendering to the
-// KpiDisplay component so the formulas and presentation are centralised.
-//
-// Contract:
-//   createStep2Analysis({ persona, document, onBack?, onNext? })
-//     - persona:  one entry from data/personas (must include tasks array)
-//     - document: DOM-like factory; defaults to global document
-//     - onBack:   optional callback wired to a "Back" button
-//     - onNext:   optional callback wired to a "Next" button
-//   Returns the root element. The root carries `persona` and `taskRows`
-//   references for ease of inspection in tests.
+// AgentStart - Step 2: Workflow Analysis
 
-const { computePersonaKpis } = require('../lib/kpi');
+const {
+  computePersonaKpis,
+  DASHBOARD_WORK_WEEK_HOURS,
+  DAYS_PER_MONTH,
+  DAYS_PER_WEEK,
+} = require('../lib/kpi');
 const { createKpiDisplay } = require('../components/KpiDisplay');
 const { createTaskBreakdownTable } = require('../components/TaskBreakdownTable');
 
@@ -44,46 +31,66 @@ function createStep2Analysis({ persona, document: docArg, onBack, onNext } = {})
   root.setAttribute('data-step', '2');
   root.setAttribute('data-persona-id', String(persona.persona_id ?? ''));
 
-  // Heading clearly identifies the selected persona — the click-through test
-  // asserts this text contains the matched persona's display name.
   const heading = doc.createElement('h1');
   heading.className = 'step__heading';
   heading.textContent = `Workflow analysis for ${persona.persona_name}`;
   root.appendChild(heading);
 
-  const rate = doc.createElement('p');
-  rate.className = 'analysis__rate';
-  rate.textContent = `Hourly rate: $${persona.hourly_rate}/hr · ${persona.rate_source}`;
-  root.appendChild(rate);
-
-  // Top-line KPIs delegated to the KpiDisplay component so the large-font
-  // rendering and value formatting stay in one place.
   const kpiData = computePersonaKpis(persona);
-  const kpiDisplay = createKpiDisplay({ kpis: kpiData, document: doc });
+  const rateDetail = persona.rate_detail || {};
+  const annualWageText = rateDetail.mean_annual_wage
+    ? `$${rateDetail.mean_annual_wage.toLocaleString()}`
+    : 'BLS mean annual wage';
+  const calculationDetails = {
+    tasksAutomated:
+      'Count of tasks whose automation confidence is at least 80%.',
+    hoursSavedWeekly:
+      [
+        'Sum of per-task hours saved.',
+        'Uses each task frequency share.',
+        `Applies a ${DASHBOARD_WORK_WEEK_HOURS}-hour work week.`,
+        'Compares human-only vs. human-with-AI task time.',
+      ].join('\n'),
+    timeSavedPct:
+      [
+        'Total hours saved.',
+        `Divided by the ${DASHBOARD_WORK_WEEK_HOURS}-hour weekly baseline.`,
+      ].join('\n'),
+    roiMonthly:
+      [
+        'Sum of task ROI/month.',
+        `Hourly rate input: ${annualWageText} / 2,080 work-year hours = ~$${persona.hourly_rate}/hr.`,
+        `Formula per task: hourly rate * (hours saved/week / ${DAYS_PER_WEEK}) * ${DAYS_PER_MONTH}.`,
+      ].join('\n'),
+  };
+  const kpiDisplay = createKpiDisplay({
+    kpis: kpiData,
+    calculationDetails,
+    document: doc,
+  });
   root.appendChild(kpiDisplay);
   root.kpiDisplay = kpiDisplay;
 
-  // Task breakdown table — ordered by frequency (highest first) so the
-  // most-impactful items surface at the top. Uses the canonical
-  // TaskBreakdownTable component which delegates to sortTasksByDimension
-  // and renders explicit confidence interval columns.
   const breakdownTable = createTaskBreakdownTable({
     tasks: persona.tasks,
+    hourlyRate: persona.hourly_rate,
+    rateDetail,
     sortDimension: 'task_frequency',
     document: doc,
   });
-  root.appendChild(breakdownTable);
+  const tableWrap = doc.createElement('div');
+  tableWrap.className = 'task-breakdown-table-wrap';
+  tableWrap.appendChild(breakdownTable);
+  root.appendChild(tableWrap);
   root.breakdownTable = breakdownTable;
 
-  // Backward-compatible taskRows reference — maps to the table's data
-  // rows so existing tests that inspect root.taskRows still resolve.
   const taskRows = breakdownTable._dataRows;
 
   if (typeof onBack === 'function') {
     const back = doc.createElement('button');
     back.className = 'step__back';
     back.setAttribute('type', 'button');
-    back.textContent = '← Back to roles';
+    back.textContent = '<- Back to roles';
     back.addEventListener('click', () => onBack());
     root.appendChild(back);
     root.backButton = back;
@@ -93,7 +100,7 @@ function createStep2Analysis({ persona, document: docArg, onBack, onNext } = {})
     const next = doc.createElement('button');
     next.className = 'step__next step__next--primary';
     next.setAttribute('type', 'button');
-    next.textContent = 'View agent workflow →';
+    next.textContent = 'View agent workflow ->';
     next.addEventListener('click', () => onNext());
     root.appendChild(next);
     root.nextButton = next;
@@ -102,11 +109,6 @@ function createStep2Analysis({ persona, document: docArg, onBack, onNext } = {})
   root.persona = persona;
   root.taskRows = taskRows;
 
-  // ── Form state for save-on-exit persistence ────────────────────────────
-  //
-  // Step 2 is a read-only KPI dashboard whose content is fully derived from
-  // the selected persona. The form state records the view context so the
-  // store can reconstruct the analysis view without re-deriving metrics.
   root.getFormState = () => ({
     personaId: persona.persona_id,
     totalCurrentHours: kpiData.totalCurrentHours,
